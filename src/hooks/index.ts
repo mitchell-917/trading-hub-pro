@@ -4,6 +4,10 @@
 
 export { useMarketData, useMultipleTickers, useOHLCVData } from './useMarketData'
 export {
+  useRealTimeMarketData,
+  useMultipleRealTimeTickers,
+} from './useRealTimeMarketData'
+export {
   useTechnicalIndicators,
   getRSISignal,
   getMACDSignal,
