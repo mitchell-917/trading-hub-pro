@@ -9,16 +9,44 @@ import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
  */
 export const formatCurrency = (
   value: number,
-  currency: string = 'USD',
-  options?: Intl.NumberFormatOptions
+  decimals: number = 2,
+  currency: string = 'USD'
 ): string => {
+  if (typeof decimals === 'string') {
+    // Handle old API signature: formatCurrency(value, currency)
+    currency = decimals
+    decimals = 2
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    ...options,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(value)
+}
+
+/**
+ * Format a number with specified decimal places
+ */
+export const formatNumber = (
+  value: number,
+  decimals: number = 2
+): string => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value)
+}
+
+/**
+ * Format a number as percentage
+ */
+export const formatPercentage = (
+  value: number,
+  decimals: number = 2
+): string => {
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(decimals)}%`
 }
 
 /**
@@ -33,7 +61,7 @@ export const formatCompact = (value: number): string => {
 }
 
 /**
- * Format a number as a percentage
+ * Format a number as a percentage (legacy)
  */
 export const formatPercent = (
   value: number,

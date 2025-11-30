@@ -25,11 +25,11 @@ import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useAISignals } from '@/hooks/useAISignals'
 import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
-import type { TradeSignal } from '@/types'
+import type { AISignal } from '@/types'
 
 interface AISignalPanelProps {
   symbol?: string
-  onSignalSelect?: (signal: TradeSignal) => void
+  onSignalSelect?: (signal: AISignal) => void
   className?: string
 }
 
@@ -38,8 +38,12 @@ export function AISignalPanel({
   onSignalSelect,
   className,
 }: AISignalPanelProps) {
-  const { signals, isLoading, marketSentiment, confidenceLevel } = useAISignals(symbol)
-  const [selectedSignal, setSelectedSignal] = useState<TradeSignal | null>(null)
+  const { signals, isLoading, analysis } = useAISignals({ symbol })
+  const [selectedSignal, setSelectedSignal] = useState<AISignal | null>(null)
+
+  // Extract sentiment and confidence from analysis with defaults
+  const marketSentiment = analysis?.sentiment ?? 'neutral'
+  const confidenceLevel = analysis?.confidence ?? 50
 
   // Get the primary signal (highest confidence)
   const primarySignal = useMemo(() => {
@@ -47,18 +51,19 @@ export function AISignalPanel({
     return [...signals].sort((a, b) => b.confidence - a.confidence)[0]
   }, [signals])
 
-  const handleSignalClick = (signal: TradeSignal) => {
+  const handleSignalClick = (signal: AISignal) => {
     setSelectedSignal(selectedSignal?.id === signal.id ? null : signal)
     onSignalSelect?.(signal)
   }
 
-  const sentimentConfig = {
+  const sentimentConfig: Record<string, { color: string; bg: string; icon: typeof TrendingUp }> = {
     bullish: { color: 'text-green-400', bg: 'bg-green-500/20', icon: TrendingUp },
     bearish: { color: 'text-red-400', bg: 'bg-red-500/20', icon: TrendingDown },
     neutral: { color: 'text-yellow-400', bg: 'bg-yellow-500/20', icon: BarChart2 },
   }
 
-  const sentiment = sentimentConfig[marketSentiment]
+  // Default to neutral if sentiment is not recognized
+  const sentiment = sentimentConfig[marketSentiment] || sentimentConfig.neutral
 
   return (
     <Card className={cn('p-4', className)}>

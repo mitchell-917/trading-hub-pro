@@ -3,7 +3,7 @@
 // ============================================
 
 import { render, screen } from '@/test/test-utils'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { 
   Sparkline, 
   MiniCandle, 
@@ -13,14 +13,7 @@ import { RSIChart } from '../RSIChart'
 import { DepthChart } from '../DepthChart'
 import { TradingAreaChart } from '../AreaChart'
 
-// Mock ResizeObserver for Recharts
-beforeAll(() => {
-  global.ResizeObserver = vi.fn().mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }))
-})
+// ResizeObserver is mocked in test/setup.ts
 
 describe('Sparkline', () => {
   it('renders with data', () => {
