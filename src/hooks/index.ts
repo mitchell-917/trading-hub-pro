@@ -8,6 +8,11 @@ export {
   useMultipleRealTimeTickers,
 } from './useRealTimeMarketData'
 export {
+  useExchangeRates,
+  usePriceConversion,
+  useAsyncCurrencyConversion,
+} from './useCurrencyConversion'
+export {
   useTechnicalIndicators,
   getRSISignal,
   getMACDSignal,
