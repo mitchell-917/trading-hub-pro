@@ -36,3 +36,11 @@ export {
   getSignalRecommendation,
   calculateRiskReward,
 } from './useAISignals'
+export {
+  useStockQuote,
+  useStockHistory,
+  useMultipleStockQuotes,
+  useStockSearch,
+  useMarketIndices,
+  useStockDailyHistory,
+} from './useStockData'
