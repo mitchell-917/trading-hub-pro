@@ -3,7 +3,7 @@
 // Support for FX pairs and commodity prices
 // ============================================
 
-import type { MarketTicker } from '@/types'
+import type { Ticker } from '@/types'
 
 // Exchange Rate API configuration
 const EXCHANGE_RATE_API_BASE = 'https://open.er-api.com/v6'
@@ -129,9 +129,9 @@ class ForexAPI {
   }
 
   /**
-   * Convert forex rate to MarketTicker format
+   * Convert forex rate to Ticker format
    */
-  forexToTicker(forex: ForexRate, name?: string): MarketTicker {
+  forexToTicker(forex: ForexRate, name?: string): Ticker {
     return {
       symbol: forex.pair,
       name: name || forex.pair,
@@ -142,7 +142,7 @@ class ForexAPI {
       low24h: forex.low24h,
       volume: 0, // Forex doesn't have volume in free APIs
       marketCap: 0,
-      lastUpdate: forex.lastUpdate,
+      lastUpdated: forex.lastUpdate,
     }
   }
 

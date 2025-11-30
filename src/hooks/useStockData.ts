@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { stockAPI, STOCK_SYMBOLS, type StockQuote, type StockKline } from '@/services/api/stocks'
+import { stockAPI, STOCK_SYMBOLS, type StockQuote } from '@/services/api/stocks'
 import { useCurrency } from '@/context/CurrencyContext'
 
 interface UseStockDataOptions {

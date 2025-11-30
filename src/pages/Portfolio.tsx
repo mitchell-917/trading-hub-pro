@@ -144,8 +144,10 @@ function MetricCard({
   icon: Icon, 
   trend,
   subtitle,
-  formatPrice,
+  formatPrice: _formatPrice,
 }: MetricCardProps) {
+  // _formatPrice available for custom formatting if needed
+  void _formatPrice
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between">

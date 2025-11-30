@@ -3,15 +3,15 @@
 // Alpha Vantage and Polygon.io integration for stocks
 // ============================================
 
-import type { OHLCV, MarketTicker } from '@/types'
+import type { OHLCV, Ticker } from '@/types'
 
 // Alpha Vantage API configuration
 const ALPHA_VANTAGE_API_KEY = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY || 'demo'
 const ALPHA_VANTAGE_BASE_URL = 'https://www.alphavantage.co/query'
 
-// Polygon.io API configuration
-const POLYGON_API_KEY = import.meta.env.VITE_POLYGON_API_KEY || ''
-const POLYGON_BASE_URL = 'https://api.polygon.io'
+// Polygon.io API configuration (for future use)
+// const POLYGON_API_KEY = import.meta.env.VITE_POLYGON_API_KEY || ''
+// const POLYGON_BASE_URL = 'https://api.polygon.io'
 
 interface AlphaVantageQuote {
   '01. symbol': string
@@ -158,14 +158,17 @@ class StockAPI {
       }
 
       return Object.entries(timeSeries)
-        .map(([dateStr, values]) => ({
-          timestamp: new Date(dateStr).getTime(),
-          open: parseFloat((values as Record<string, string>)['1. open']),
-          high: parseFloat((values as Record<string, string>)['2. high']),
-          low: parseFloat((values as Record<string, string>)['3. low']),
-          close: parseFloat((values as Record<string, string>)['4. close']),
-          volume: parseInt((values as Record<string, string>)['5. volume']),
-        }))
+        .map(([dateStr, values]) => {
+          const v = values as unknown as Record<string, string>
+          return {
+            timestamp: new Date(dateStr).getTime(),
+            open: parseFloat(v['1. open']),
+            high: parseFloat(v['2. high']),
+            low: parseFloat(v['3. low']),
+            close: parseFloat(v['4. close']),
+            volume: parseInt(v['5. volume']),
+          }
+        })
         .sort((a, b) => a.timestamp - b.timestamp)
     } catch (error) {
       console.error(`Failed to fetch intraday data for ${symbol}:`, error)
@@ -188,14 +191,17 @@ class StockAPI {
       }
 
       return Object.entries(timeSeries)
-        .map(([dateStr, values]) => ({
-          timestamp: new Date(dateStr).getTime(),
-          open: parseFloat((values as Record<string, string>)['1. open']),
-          high: parseFloat((values as Record<string, string>)['2. high']),
-          low: parseFloat((values as Record<string, string>)['3. low']),
-          close: parseFloat((values as Record<string, string>)['4. close']),
-          volume: parseInt((values as Record<string, string>)['5. volume']),
-        }))
+        .map(([dateStr, values]) => {
+          const v = values as unknown as Record<string, string>
+          return {
+            timestamp: new Date(dateStr).getTime(),
+            open: parseFloat(v['1. open']),
+            high: parseFloat(v['2. high']),
+            low: parseFloat(v['3. low']),
+            close: parseFloat(v['4. close']),
+            volume: parseInt(v['5. volume']),
+          }
+        })
         .sort((a, b) => a.timestamp - b.timestamp)
     } catch (error) {
       console.error(`Failed to fetch daily data for ${symbol}:`, error)
@@ -204,9 +210,9 @@ class StockAPI {
   }
 
   /**
-   * Convert StockQuote to MarketTicker format
+   * Convert StockQuote to Ticker format
    */
-  quoteToTicker(quote: StockQuote, name?: string): MarketTicker {
+  quoteToTicker(quote: StockQuote, name?: string): Ticker {
     return {
       symbol: quote.symbol,
       name: name || quote.symbol,
@@ -217,7 +223,7 @@ class StockAPI {
       low24h: quote.low,
       volume: quote.volume,
       marketCap: 0,
-      lastUpdate: Date.now(),
+      lastUpdated: Date.now(),
     }
   }
 

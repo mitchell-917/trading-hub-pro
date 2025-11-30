@@ -3,7 +3,7 @@
 // High-performance candlestick chart with advanced features
 // ============================================
 
-import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
+import { useMemo, useCallback, useState, useRef } from 'react'
 import {
   ComposedChart,
   Bar,
@@ -14,12 +14,11 @@ import {
   ResponsiveContainer,
   Cell,
   ReferenceLine,
-  Area,
   CartesianGrid,
   Brush,
 } from 'recharts'
 import { format } from 'date-fns'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ZoomIn, ZoomOut, Maximize2, TrendingUp, TrendingDown } from 'lucide-react'
 import type { OHLCV } from '@/types'
 import { useCurrency } from '@/context/CurrencyContext'
@@ -161,8 +160,10 @@ export function ProfessionalCandlestickChart({
   showMA = true,
   maPeriods = [20, 50],
   className,
-  onCandleClick,
+  onCandleClick: _onCandleClick,
 }: ProfessionalCandlestickChartProps) {
+  // _onCandleClick is available for future use
+  void _onCandleClick
   const { formatPrice } = useCurrency()
   const [zoomLevel, setZoomLevel] = useState(1)
   const [selectedCandle, setSelectedCandle] = useState<number | null>(null)

@@ -25,6 +25,7 @@ interface CurrencyContextValue {
   currencyCode: string
   setCurrency: (code: string) => void
   isLoading: boolean
+  isAutoDetected: boolean
   availableCurrencies: CurrencyConfig[]
   formatPrice: (price: number, decimals?: number) => string
   formatCompact: (value: number) => string
@@ -107,12 +108,16 @@ export function CurrencyProvider({
   )
 
   const availableCurrencies = Object.values(SUPPORTED_CURRENCIES)
+  
+  // Track if currency was auto-detected (not manually set by user)
+  const isAutoDetected = !getStoredCurrency() || getStoredCurrency() === currencyCode
 
   const value: CurrencyContextValue = {
     currency,
     currencyCode,
     setCurrency,
     isLoading,
+    isAutoDetected,
     availableCurrencies,
     formatPrice,
     formatCompact,
