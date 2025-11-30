@@ -20,7 +20,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
 import { useMarketData } from '@/hooks/useMarketData'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { WatchlistItem } from '@/types'
 
 interface WatchlistProps {
@@ -177,6 +178,7 @@ function WatchlistItemRow({
   onRemove 
 }: WatchlistItemRowProps) {
   const { ticker } = useMarketData(symbol)
+  const { formatPrice } = useCurrency()
   const [isHovered, setIsHovered] = useState(false)
 
   const isPositive = (ticker?.change ?? 0) >= 0
@@ -253,7 +255,7 @@ function WatchlistItemRow({
 
           <div className="text-right min-w-[80px]">
             <p className="font-medium number-mono">
-              {ticker ? formatCurrency(ticker.price) : '-'}
+              {ticker ? formatPrice(ticker.price) : '-'}
             </p>
             <p className={cn(
               'text-xs number-mono',
