@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react'
 import type { Order, OrderType, OrderSide, TimeInForce } from '@/types'
-import { useOrdersStore } from '@/lib/store'
+import { useOrdersStore, useTradingStore } from '@/lib/store'
 import { generateId } from '@/lib/utils'
 
 interface PlaceOrderParams {
@@ -46,6 +46,7 @@ export function useTrading(): UseTradingReturn {
   const [lastError, setLastError] = useState<string | null>(null)
   
   const { addOrder, updateOrder, cancelOrder: cancelStoreOrder } = useOrdersStore()
+  const { openPosition, cashBalance } = useTradingStore()
 
   const placeOrder = useCallback(
     async (params: PlaceOrderParams): Promise<PlaceOrderResult> => {
@@ -74,8 +75,20 @@ export function useTrading(): UseTradingReturn {
         return { success: false, error }
       }
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // For market orders, use the provided price as the execution price
+      const executionPrice = params.price || 0
+      const orderValue = params.quantity * executionPrice
+
+      // Check if we have enough buying power for buy orders
+      if (params.side === 'buy' && orderValue > cashBalance) {
+        const error = `Insufficient funds. Order value: $${orderValue.toFixed(2)}, Available: $${cashBalance.toFixed(2)}`
+        setLastError(error)
+        setIsSubmitting(false)
+        return { success: false, error }
+      }
+
+      // Simulate API delay (real trading would call an exchange API)
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       try {
         const order: Order = {
@@ -87,6 +100,7 @@ export function useTrading(): UseTradingReturn {
           quantity: params.quantity,
           filledQuantity: params.type === 'market' ? params.quantity : 0,
           price: params.price,
+          averagePrice: params.type === 'market' ? executionPrice : undefined,
           stopPrice: params.stopPrice,
           timeInForce: params.timeInForce || 'gtc',
           createdAt: Date.now(),
@@ -95,8 +109,25 @@ export function useTrading(): UseTradingReturn {
         }
 
         addOrder(order)
-        setIsSubmitting(false)
 
+        // For market orders, immediately create a position
+        if (params.type === 'market' && params.side === 'buy') {
+          openPosition({
+            symbol: params.symbol,
+            name: params.symbol, // Will be updated with proper name
+            quantity: params.quantity,
+            averagePrice: executionPrice,
+            currentPrice: executionPrice,
+            allocation: 0,
+            lastUpdated: Date.now(),
+            side: 'long',
+            entryPrice: executionPrice,
+            leverage: 1,
+            marginUsed: orderValue,
+          })
+        }
+
+        setIsSubmitting(false)
         return { success: true, order }
       } catch {
         const error = 'Failed to place order'
@@ -105,7 +136,7 @@ export function useTrading(): UseTradingReturn {
         return { success: false, error }
       }
     },
-    [addOrder]
+    [addOrder, openPosition, cashBalance]
   )
 
   const cancelOrder = useCallback(
@@ -173,8 +204,8 @@ export function useTrading(): UseTradingReturn {
     isSubmitting,
     isPlacingOrder: isSubmitting,
     lastError,
-    balance: 50000, // Mock balance
-    buyingPower: 100000, // Mock buying power (with margin)
+    balance: cashBalance,
+    buyingPower: cashBalance,
   }
 }
 
