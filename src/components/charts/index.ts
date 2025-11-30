@@ -4,6 +4,7 @@
 // ============================================
 
 export * from './CandlestickChart'
+export * from './ProfessionalCandlestickChart'
 export * from './AreaChart'
 export * from './RSIChart'
 export * from './DepthChart'
