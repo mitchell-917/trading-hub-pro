@@ -14,7 +14,8 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { format } from 'date-fns'
-import { cn, formatCurrency } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
+import { cn } from '@/lib/utils'
 
 interface TradingAreaChartData {
   timestamp: number
@@ -36,9 +37,10 @@ interface CustomTooltipProps {
   active?: boolean
   payload?: Array<{ payload: TradingAreaChartData & { formattedTime: string } }>
   strokeColor: string
+  formatPrice: (price: number) => string
 }
 
-function AreaChartTooltip({ active, payload, strokeColor }: CustomTooltipProps) {
+function AreaChartTooltip({ active, payload, strokeColor, formatPrice }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null
 
   const point = payload[0].payload
@@ -49,7 +51,7 @@ function AreaChartTooltip({ active, payload, strokeColor }: CustomTooltipProps) 
         {format(new Date(point.timestamp), 'MMM d, HH:mm')}
       </div>
       <div className="text-sm font-medium number-mono" style={{ color: strokeColor }}>
-        {formatCurrency(point.value)}
+        {formatPrice(point.value)}
       </div>
     </div>
   )
@@ -64,6 +66,8 @@ export function TradingAreaChart({
   showAxis = true,
   className,
 }: TradingAreaChartProps) {
+  const { formatPrice } = useCurrency()
+  
   const chartData = useMemo(() => {
     return data.map((point) => ({
       ...point,
@@ -91,8 +95,8 @@ export function TradingAreaChart({
   // Memoized tooltip content renderer
   const renderTooltip = useCallback((props: { active?: boolean; payload?: Array<{ payload: TradingAreaChartData & { formattedTime: string } }> }) => {
     if (!showTooltip) return null
-    return <AreaChartTooltip {...props} strokeColor={strokeColor} />
-  }, [showTooltip, strokeColor])
+    return <AreaChartTooltip {...props} strokeColor={strokeColor} formatPrice={formatPrice} />
+  }, [showTooltip, strokeColor, formatPrice])
 
   if (data.length === 0) {
     return (
