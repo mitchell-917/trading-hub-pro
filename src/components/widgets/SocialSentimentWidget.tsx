@@ -433,7 +433,7 @@ export function SocialSentimentWidget({ compact = false, className }: SocialSent
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <Button
-          variant={activeTab === 'overview' ? 'default' : 'ghost'}
+          variant={activeTab === 'overview' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => setActiveTab('overview')}
         >
@@ -441,7 +441,7 @@ export function SocialSentimentWidget({ compact = false, className }: SocialSent
           Overview
         </Button>
         <Button
-          variant={activeTab === 'mentions' ? 'default' : 'ghost'}
+          variant={activeTab === 'mentions' ? 'primary' : 'ghost'}
           size="sm"
           onClick={() => setActiveTab('mentions')}
         >

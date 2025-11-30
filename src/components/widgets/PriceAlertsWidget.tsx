@@ -329,7 +329,7 @@ function CreateAlertForm({ onClose, onCreate }: CreateAlertFormProps) {
                   <Button
                     key={t}
                     type="button"
-                    variant={type === t ? 'default' : 'ghost'}
+                    variant={type === t ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => setType(t)}
                     className="flex-1"
@@ -507,7 +507,7 @@ export function PriceAlertsWidget({ compact = false, className }: PriceAlertsWid
         {(['all', 'active', 'triggered'] as const).map(f => (
           <Button
             key={f}
-            variant={filter === f ? 'default' : 'ghost'}
+            variant={filter === f ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setFilter(f)}
             className="capitalize"

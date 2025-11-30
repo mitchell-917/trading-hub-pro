@@ -394,7 +394,7 @@ export function CommoditiesWidget({ compact = false, className }: CommoditiesWid
         {tabs.map(tab => (
           <Button
             key={tab.value}
-            variant={activeTab === tab.value ? 'default' : 'ghost'}
+            variant={activeTab === tab.value ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab(tab.value)}
             className="flex items-center gap-2 whitespace-nowrap"

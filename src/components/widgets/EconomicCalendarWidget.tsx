@@ -276,7 +276,7 @@ function FilterPanel({
               {impactOptions.map(impact => (
                 <Button
                   key={impact}
-                  variant={selectedImpact.includes(impact) ? 'default' : 'ghost'}
+                  variant={selectedImpact.includes(impact) ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => toggleImpact(impact)}
                   className="capitalize"
@@ -295,7 +295,7 @@ function FilterPanel({
               {countries?.slice(0, 6).map(country => (
                 <Button
                   key={country.code}
-                  variant={selectedCountries.includes(country.code) ? 'default' : 'ghost'}
+                  variant={selectedCountries.includes(country.code) ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => toggleCountry(country.code)}
                 >
@@ -416,7 +416,7 @@ export function EconomicCalendarWidget({ compact = false, className }: EconomicC
 
         <div className="flex items-center gap-2">
           <Button
-            variant={showFilters ? 'default' : 'ghost'}
+            variant={showFilters ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
           >

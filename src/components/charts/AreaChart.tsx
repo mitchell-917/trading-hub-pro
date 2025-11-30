@@ -139,7 +139,7 @@ export function TradingAreaChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#6b7280', fontSize: 10 }}
-                tickFormatter={(value) => formatCurrency(value)}
+                tickFormatter={(value) => formatPrice(value)}
                 width={60}
               />
             </>

@@ -414,7 +414,7 @@ export function NewsWidget({ compact = false, className }: NewsWidgetProps) {
         {categories.map(cat => (
           <Button
             key={cat.value}
-            variant={activeCategory === cat.value ? 'default' : 'ghost'}
+            variant={activeCategory === cat.value ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setActiveCategory(cat.value)}
             className="flex items-center gap-2 whitespace-nowrap"

@@ -272,7 +272,7 @@ export function ForexWidget({ compact = false, className }: ForexWidgetProps) {
 
         <div className="flex items-center gap-2">
           <Button
-            variant={showConverter ? 'default' : 'ghost'}
+            variant={showConverter ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setShowConverter(!showConverter)}
           >
