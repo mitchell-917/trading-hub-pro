@@ -44,7 +44,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Position } from '@/types'
 
 // Helper to compute portfolio values
@@ -133,6 +134,7 @@ interface MetricCardProps {
   icon: typeof TrendingUp
   trend?: 'up' | 'down' | 'neutral'
   subtitle?: string
+  formatPrice: (value: number, decimals?: number) => string
 }
 
 function MetricCard({ 
@@ -142,6 +144,7 @@ function MetricCard({
   icon: Icon, 
   trend,
   subtitle,
+  formatPrice,
 }: MetricCardProps) {
   return (
     <Card className="p-4">
@@ -180,6 +183,7 @@ export function Portfolio() {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1M')
   const [selectedMetric, setSelectedMetric] = useState<'value' | 'pnl'>('value')
   const positions = useTradingStore((s) => s.positions)
+  const { formatPrice } = useCurrency()
   
   // Compute portfolio values with useMemo to avoid infinite loops
   const portfolio = useMemo(() => computePortfolio(positions), [positions])
@@ -252,24 +256,27 @@ export function Portfolio() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Portfolio Value"
-            value={formatCurrency(portfolio.totalValue)}
+            value={formatPrice(portfolio.totalValue)}
             change={portfolio.dailyPnLPercent}
             icon={Wallet}
             trend={portfolio.dailyPnL >= 0 ? 'up' : 'down'}
+            formatPrice={formatPrice}
           />
           <MetricCard
             title="Unrealized P&L"
-            value={formatCurrency(portfolio.unrealizedPnL)}
+            value={formatPrice(portfolio.unrealizedPnL)}
             change={(portfolio.unrealizedPnL / portfolio.totalValue) * 100}
             icon={portfolio.unrealizedPnL >= 0 ? TrendingUp : TrendingDown}
             trend={portfolio.unrealizedPnL >= 0 ? 'up' : 'down'}
+            formatPrice={formatPrice}
           />
           <MetricCard
             title="Buying Power"
-            value={formatCurrency(portfolio.buyingPower)}
+            value={formatPrice(portfolio.buyingPower)}
             icon={DollarSign}
             trend="neutral"
             subtitle="Available for trading"
+            formatPrice={formatPrice}
           />
           <MetricCard
             title="Win Rate"
@@ -277,6 +284,7 @@ export function Portfolio() {
             icon={Target}
             trend={riskMetrics.winRate >= 50 ? 'up' : 'down'}
             subtitle={`${positions.length} active positions`}
+            formatPrice={formatPrice}
           />
         </div>
 
@@ -330,7 +338,7 @@ export function Portfolio() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
                   labelFormatter={(timestamp) => new Date(timestamp).toLocaleDateString()}
-                  formatter={(value: number) => [formatCurrency(value), selectedMetric === 'value' ? 'Value' : 'P&L']}
+                  formatter={(value: number) => [formatPrice(value), selectedMetric === 'value' ? 'Value' : 'P&L']}
                 />
                 <Area 
                   type="monotone" 
@@ -376,7 +384,7 @@ export function Portfolio() {
                     </Pie>
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: number) => formatPrice(value)}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -393,7 +401,7 @@ export function Portfolio() {
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gray-400">
-                        {formatCurrency(item.value)}
+                        {formatPrice(item.value)}
                       </span>
                       <span className="text-sm font-medium w-16 text-right">
                         {item.percent.toFixed(1)}%
@@ -469,7 +477,7 @@ export function Portfolio() {
             </div>
             <div className="p-4 rounded-lg bg-gray-800/50">
               <p className="text-xs text-gray-400 mb-1">VaR (95%)</p>
-              <p className="text-xl font-bold text-orange-400">{formatCurrency(riskMetrics.var95)}</p>
+              <p className="text-xl font-bold text-orange-400">{formatPrice(riskMetrics.var95)}</p>
             </div>
           </div>
         </Card>
@@ -528,7 +536,7 @@ export function Portfolio() {
               </div>
               <div>
                 <p className="text-sm text-gray-400">Avg. Win</p>
-                <p className="text-xl font-bold">{formatCurrency(riskMetrics.avgWin)}</p>
+                <p className="text-xl font-bold">{formatPrice(riskMetrics.avgWin)}</p>
               </div>
             </div>
           </Card>
@@ -539,7 +547,7 @@ export function Portfolio() {
               </div>
               <div>
                 <p className="text-sm text-gray-400">Avg. Loss</p>
-                <p className="text-xl font-bold">{formatCurrency(riskMetrics.avgLoss)}</p>
+                <p className="text-xl font-bold">{formatPrice(riskMetrics.avgLoss)}</p>
               </div>
             </div>
           </Card>
