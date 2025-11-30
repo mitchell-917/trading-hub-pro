@@ -2,7 +2,7 @@
 // TradingHub Pro - Trading Hook Tests
 // ============================================
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useTrading, calculateOrderValue, validateOrder, formatOrderDisplay } from '../useTrading'
 import type { Order } from '@/types'
@@ -70,6 +70,24 @@ describe('useTrading', () => {
       expect(orderResult!.error).toBe('Quantity must be greater than 0')
     })
 
+    it('rejects order with negative quantity', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let orderResult: Awaited<ReturnType<typeof result.current.placeOrder>>
+
+      await act(async () => {
+        orderResult = await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'buy',
+          type: 'market',
+          quantity: -5,
+        })
+      })
+
+      expect(orderResult!.success).toBe(false)
+      expect(orderResult!.error).toBe('Quantity must be greater than 0')
+    })
+
     it('rejects limit order without price', async () => {
       const { result } = renderHook(() => useTrading(), { wrapper })
 
@@ -106,6 +124,66 @@ describe('useTrading', () => {
       expect(orderResult!.error).toBe('Stop orders require a stop price')
     })
 
+    it('rejects stop-limit order without stop price', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let orderResult: Awaited<ReturnType<typeof result.current.placeOrder>>
+
+      await act(async () => {
+        orderResult = await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'sell',
+          type: 'stop-limit',
+          quantity: 1,
+          price: 50000,
+        })
+      })
+
+      expect(orderResult!.success).toBe(false)
+      expect(orderResult!.error).toBe('Stop orders require a stop price')
+    })
+
+    it('places stop order with stop price successfully', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let orderResult: Awaited<ReturnType<typeof result.current.placeOrder>>
+
+      await act(async () => {
+        orderResult = await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'sell',
+          type: 'stop',
+          quantity: 1,
+          stopPrice: 45000,
+        })
+      })
+
+      expect(orderResult!.success).toBe(true)
+      expect(orderResult!.order?.stopPrice).toBe(45000)
+      expect(orderResult!.order?.status).toBe('open')
+    })
+
+    it('places stop-limit order with both prices successfully', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let orderResult: Awaited<ReturnType<typeof result.current.placeOrder>>
+
+      await act(async () => {
+        orderResult = await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'sell',
+          type: 'stop-limit',
+          quantity: 1,
+          price: 44000,
+          stopPrice: 45000,
+        })
+      })
+
+      expect(orderResult!.success).toBe(true)
+      expect(orderResult!.order?.stopPrice).toBe(45000)
+      expect(orderResult!.order?.price).toBe(44000)
+    })
+
     it('sets isSubmitting during order placement', async () => {
       const { result } = renderHook(() => useTrading(), { wrapper })
 
@@ -125,6 +203,212 @@ describe('useTrading', () => {
       await waitFor(() => {
         expect(result.current.isSubmitting).toBe(false)
       })
+    })
+
+    it('uses custom timeInForce when provided', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let orderResult: Awaited<ReturnType<typeof result.current.placeOrder>>
+
+      await act(async () => {
+        orderResult = await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'buy',
+          type: 'limit',
+          quantity: 1,
+          price: 50000,
+          timeInForce: 'ioc',
+        })
+      })
+
+      expect(orderResult!.success).toBe(true)
+      expect(orderResult!.order?.timeInForce).toBe('ioc')
+    })
+  })
+
+  describe('cancelOrder', () => {
+    it('cancels an order successfully', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let cancelResult: Awaited<ReturnType<typeof result.current.cancelOrder>>
+
+      await act(async () => {
+        cancelResult = await result.current.cancelOrder('order-123')
+      })
+
+      expect(cancelResult!.success).toBe(true)
+    })
+
+    it('sets isSubmitting during cancellation', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      expect(result.current.isSubmitting).toBe(false)
+
+      act(() => {
+        result.current.cancelOrder('order-123')
+      })
+
+      expect(result.current.isSubmitting).toBe(true)
+
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(false)
+      })
+    })
+  })
+
+  describe('modifyOrder', () => {
+    it('modifies an order successfully', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let modifyResult: Awaited<ReturnType<typeof result.current.modifyOrder>>
+
+      await act(async () => {
+        modifyResult = await result.current.modifyOrder('order-123', {
+          quantity: 10,
+          price: 55000,
+        })
+      })
+
+      expect(modifyResult!.success).toBe(true)
+    })
+
+    it('rejects modification with zero quantity', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let modifyResult: Awaited<ReturnType<typeof result.current.modifyOrder>>
+
+      await act(async () => {
+        modifyResult = await result.current.modifyOrder('order-123', {
+          quantity: 0,
+        })
+      })
+
+      expect(modifyResult!.success).toBe(false)
+      expect(modifyResult!.error).toBe('Quantity must be greater than 0')
+    })
+
+    it('rejects modification with negative quantity', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let modifyResult: Awaited<ReturnType<typeof result.current.modifyOrder>>
+
+      await act(async () => {
+        modifyResult = await result.current.modifyOrder('order-123', {
+          quantity: -5,
+        })
+      })
+
+      expect(modifyResult!.success).toBe(false)
+      expect(modifyResult!.error).toBe('Quantity must be greater than 0')
+    })
+
+    it('modifies only price without changing quantity', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let modifyResult: Awaited<ReturnType<typeof result.current.modifyOrder>>
+
+      await act(async () => {
+        modifyResult = await result.current.modifyOrder('order-123', {
+          price: 60000,
+        })
+      })
+
+      expect(modifyResult!.success).toBe(true)
+    })
+
+    it('modifies stop price', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      let modifyResult: Awaited<ReturnType<typeof result.current.modifyOrder>>
+
+      await act(async () => {
+        modifyResult = await result.current.modifyOrder('order-123', {
+          stopPrice: 48000,
+        })
+      })
+
+      expect(modifyResult!.success).toBe(true)
+    })
+
+    it('sets isSubmitting during modification', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      expect(result.current.isSubmitting).toBe(false)
+
+      act(() => {
+        result.current.modifyOrder('order-123', { quantity: 5 })
+      })
+
+      expect(result.current.isSubmitting).toBe(true)
+
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(false)
+      })
+    })
+  })
+
+  describe('hook return values', () => {
+    it('provides balance value', () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+      expect(result.current.balance).toBe(50000)
+    })
+
+    it('provides buyingPower value', () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+      expect(result.current.buyingPower).toBe(100000)
+    })
+
+    it('provides isPlacingOrder alias for isSubmitting', () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+      expect(result.current.isPlacingOrder).toBe(result.current.isSubmitting)
+    })
+
+    it('initially has no lastError', () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+      expect(result.current.lastError).toBeNull()
+    })
+
+    it('sets lastError on validation failure', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      await act(async () => {
+        await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'buy',
+          type: 'market',
+          quantity: 0,
+        })
+      })
+
+      expect(result.current.lastError).toBe('Quantity must be greater than 0')
+    })
+
+    it('clears lastError on successful order', async () => {
+      const { result } = renderHook(() => useTrading(), { wrapper })
+
+      // First, cause an error
+      await act(async () => {
+        await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'buy',
+          type: 'market',
+          quantity: 0,
+        })
+      })
+
+      expect(result.current.lastError).not.toBeNull()
+
+      // Then place a valid order
+      await act(async () => {
+        await result.current.placeOrder({
+          symbol: 'BTC',
+          side: 'buy',
+          type: 'market',
+          quantity: 1,
+        })
+      })
+
+      expect(result.current.lastError).toBeNull()
     })
   })
 })

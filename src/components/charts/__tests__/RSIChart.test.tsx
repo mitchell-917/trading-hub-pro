@@ -3,6 +3,7 @@
 // Comprehensive tests for RSI chart component
 // ============================================
 
+import React from 'react'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { RSIChart } from '../RSIChart'
@@ -18,7 +19,18 @@ vi.mock('recharts', () => ({
   Area: () => <div data-testid="area" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
-  Tooltip: () => <div data-testid="tooltip" />,
+  Tooltip: ({ content }: { content: unknown }) => {
+    // Call the content function to test tooltip rendering
+    if (typeof content === 'function') {
+      const TooltipContent = content as React.FC<{ active?: boolean; payload?: Array<{ payload: { timestamp: number; value: number; formattedTime: string } }> }>
+      return (
+        <div data-testid="tooltip">
+          <TooltipContent active={true} payload={[{ payload: { timestamp: Date.now(), value: 65, formattedTime: '12:00' } }]} />
+        </div>
+      )
+    }
+    return <div data-testid="tooltip" />
+  },
   ReferenceLine: ({ y }: { y: number }) => (
     <div data-testid={`reference-line-${y}`} />
   ),
@@ -163,6 +175,104 @@ describe('RSIChart', () => {
       render(<RSIChart data={testData} />)
       
       expect(screen.getByText(/RSI: 65.5/)).toBeInTheDocument()
+    })
+
+    it('displays overbought RSI with red styling', () => {
+      const testData = [
+        { timestamp: Date.now() - 1000, value: 50, overbought: false, oversold: false },
+        { timestamp: Date.now(), value: 75.0, overbought: true, oversold: false },
+      ]
+      
+      render(<RSIChart data={testData} />)
+      
+      expect(screen.getByText(/RSI: 75.0/)).toBeInTheDocument()
+    })
+
+    it('displays oversold RSI with green styling', () => {
+      const testData = [
+        { timestamp: Date.now() - 1000, value: 50, overbought: false, oversold: false },
+        { timestamp: Date.now(), value: 25.0, overbought: false, oversold: true },
+      ]
+      
+      render(<RSIChart data={testData} />)
+      
+      expect(screen.getByText(/RSI: 25.0/)).toBeInTheDocument()
+    })
+  })
+
+  describe('Tooltip Rendering', () => {
+    it('renders tooltip component', () => {
+      render(<RSIChart data={mockData} />)
+      
+      expect(screen.getByTestId('tooltip')).toBeInTheDocument()
+    })
+
+    it('displays RSI value in tooltip', () => {
+      render(<RSIChart data={mockData} />)
+      
+      // The mocked Tooltip calls the content function
+      expect(screen.getByText(/RSI: 65.00/)).toBeInTheDocument()
+    })
+
+    it('shows Neutral label for RSI between 30 and 70', () => {
+      render(<RSIChart data={mockData} />)
+      
+      expect(screen.getByText('Neutral')).toBeInTheDocument()
+    })
+  })
+
+  describe('Empty State', () => {
+    it('shows no data message when data array is empty', () => {
+      render(<RSIChart data={[]} />)
+      
+      expect(screen.getByText(/no rsi data/i)).toBeInTheDocument()
+    })
+
+    it('applies className to empty state container', () => {
+      const { container } = render(<RSIChart data={[]} className="test-empty" />)
+      
+      expect(container.querySelector('.test-empty')).toBeInTheDocument()
+    })
+
+    it('respects height prop in empty state', () => {
+      const { container } = render(<RSIChart data={[]} height={200} />)
+      
+      expect(container.firstChild).toHaveStyle({ height: '200px' })
+    })
+  })
+
+  describe('Data Processing', () => {
+    it('processes timestamps correctly', () => {
+      const testData = [
+        { timestamp: new Date('2024-01-01T12:00:00').getTime(), value: 50, overbought: false, oversold: false },
+      ]
+      
+      render(<RSIChart data={testData} />)
+      
+      expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
+    })
+
+    it('handles single data point', () => {
+      const singleData = [
+        { timestamp: Date.now(), value: 45, overbought: false, oversold: false },
+      ]
+      
+      render(<RSIChart data={singleData} />)
+      
+      expect(screen.getByText(/RSI: 45.0/)).toBeInTheDocument()
+    })
+
+    it('handles many data points', () => {
+      const manyPoints = Array.from({ length: 100 }, (_, i) => ({
+        timestamp: Date.now() - i * 60000,
+        value: 30 + (i % 40),
+        overbought: false,
+        oversold: false,
+      }))
+      
+      render(<RSIChart data={manyPoints} />)
+      
+      expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
     })
   })
 })
