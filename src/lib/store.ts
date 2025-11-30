@@ -4,7 +4,7 @@
 // ============================================
 
 import { create } from 'zustand'
-import { devtools, subscribeWithSelector } from 'zustand/middleware'
+import { devtools, subscribeWithSelector, persist } from 'zustand/middleware'
 import type {
   Ticker,
   Position,
@@ -15,12 +15,16 @@ import type {
   ChartType,
   UserPreferences,
 } from '@/types'
-import {
-  generateAllTickers,
-  generatePositions,
-  generateOrders,
-  generateWatchlist,
-} from './mock-data'
+
+// Default watchlist items (no mock prices - will be updated by real data)
+const DEFAULT_WATCHLIST: WatchlistItem[] = [
+  { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
+  { symbol: 'ETH', name: 'Ethereum', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
+  { symbol: 'SOL', name: 'Solana', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
+]
+
+// Initial account balance
+const INITIAL_BALANCE = 100000
 
 // ============================================
 // Trading Store
@@ -41,17 +45,21 @@ interface TradingState {
   orders: Order[]
   watchlist: WatchlistItem[]
   settings: UserSettings
+  cashBalance: number
   
   // Actions
   setActiveSymbol: (symbol: string) => void
   setSelectedSymbol: (symbol: string) => void
   updateTickers: (tickers: Ticker[]) => void
   updateTicker: (ticker: Ticker) => void
-  closePosition: (positionId: string) => void
+  openPosition: (position: Omit<Position, 'id' | 'unrealizedPnL' | 'unrealizedPnLPercent' | 'pnl' | 'pnlPercent'>) => void
+  closePosition: (positionId: string, exitPrice: number) => void
+  updatePositionPrices: (prices: Record<string, number>) => void
   addOrder: (order: Order) => void
   addToWatchlist: (item: WatchlistItem) => void
   removeFromWatchlist: (symbol: string) => void
   updateSettings: (settings: Partial<UserSettings>) => void
+  resetAccount: () => void
   
   // Selectors
   getActiveTicker: () => Ticker | undefined
@@ -67,122 +75,221 @@ interface TradingState {
 
 export const useTradingStore = create<TradingState>()(
   devtools(
-    subscribeWithSelector((set, get) => ({
-      tickers: generateAllTickers(),
-      activeSymbol: 'BTC',
-      selectedSymbol: 'BTC',
-      positions: generatePositions(),
-      orders: generateOrders(15),
-      watchlist: generateWatchlist(),
-      settings: {
-        theme: 'dark',
-        notifications: true,
-        sound: true,
-      },
+    subscribeWithSelector(
+      persist(
+        (set, get) => ({
+          tickers: [],
+          activeSymbol: 'BTC',
+          selectedSymbol: 'BTC',
+          positions: [], // Start with no positions
+          orders: [], // Start with no orders
+          watchlist: DEFAULT_WATCHLIST,
+          cashBalance: INITIAL_BALANCE, // Start with $100,000
+          settings: {
+            theme: 'dark',
+            notifications: true,
+            sound: true,
+          },
 
-      setActiveSymbol: (symbol: string) => {
-        set({ activeSymbol: symbol }, false, 'setActiveSymbol')
-      },
+          setActiveSymbol: (symbol: string) => {
+            set({ activeSymbol: symbol }, false, 'setActiveSymbol')
+          },
 
-      setSelectedSymbol: (symbol: string) => {
-        set({ selectedSymbol: symbol }, false, 'setSelectedSymbol')
-      },
+          setSelectedSymbol: (symbol: string) => {
+            set({ selectedSymbol: symbol }, false, 'setSelectedSymbol')
+          },
 
-      updateTickers: (tickers: Ticker[]) => {
-        set({ tickers }, false, 'updateTickers')
-      },
+          updateTickers: (tickers: Ticker[]) => {
+            set({ tickers }, false, 'updateTickers')
+          },
 
-      updateTicker: (ticker: Ticker) => {
-        set(
-          (state) => ({
-            tickers: state.tickers.map((t) =>
-              t.symbol === ticker.symbol ? ticker : t
-            ),
+          updateTicker: (ticker: Ticker) => {
+            set(
+              (state) => ({
+                tickers: state.tickers.map((t) =>
+                  t.symbol === ticker.symbol ? ticker : t
+                ),
+              }),
+              false,
+              'updateTicker'
+            )
+          },
+
+          openPosition: (positionData) => {
+            const { cashBalance } = get()
+            const cost = positionData.quantity * positionData.averagePrice
+            
+            if (cost > cashBalance) {
+              console.error('Insufficient funds')
+              return
+            }
+
+            const newPosition: Position = {
+              ...positionData,
+              id: `pos-${Date.now()}`,
+              pnl: 0,
+              pnlPercent: 0,
+              unrealizedPnL: 0,
+              unrealizedPnLPercent: 0,
+            }
+
+            set(
+              (state) => ({
+                positions: [...state.positions, newPosition],
+                cashBalance: state.cashBalance - cost,
+              }),
+              false,
+              'openPosition'
+            )
+          },
+
+          closePosition: (positionId: string, exitPrice: number) => {
+            const position = get().positions.find((p) => p.id === positionId)
+            if (!position) return
+
+            const proceeds = position.quantity * exitPrice
+            
+            // Create a closed order record
+            const closedOrder: Order = {
+              id: `order-${Date.now()}`,
+              symbol: position.symbol,
+              type: 'market',
+              side: position.side === 'long' ? 'sell' : 'buy',
+              quantity: position.quantity,
+              price: exitPrice,
+              status: 'filled',
+              filledQuantity: position.quantity,
+              averagePrice: exitPrice,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            }
+
+            set(
+              (state) => ({
+                positions: state.positions.filter((p) => p.id !== positionId),
+                cashBalance: state.cashBalance + proceeds,
+                orders: [closedOrder, ...state.orders],
+              }),
+              false,
+              'closePosition'
+            )
+          },
+
+          updatePositionPrices: (prices: Record<string, number>) => {
+            set(
+              (state) => ({
+                positions: state.positions.map((position) => {
+                  const currentPrice = prices[position.symbol]
+                  if (currentPrice === undefined) return position
+                  
+                  const pnl = (currentPrice - position.averagePrice) * position.quantity * (position.side === 'long' ? 1 : -1)
+                  const pnlPercent = ((currentPrice - position.averagePrice) / position.averagePrice) * 100 * (position.side === 'long' ? 1 : -1)
+                  
+                  return {
+                    ...position,
+                    currentPrice,
+                    pnl,
+                    pnlPercent,
+                    unrealizedPnL: pnl,
+                    unrealizedPnLPercent: pnlPercent,
+                    lastUpdated: Date.now(),
+                  }
+                }),
+              }),
+              false,
+              'updatePositionPrices'
+            )
+          },
+
+          addOrder: (order: Order) => {
+            set(
+              (state) => ({
+                orders: [order, ...state.orders],
+              }),
+              false,
+              'addOrder'
+            )
+          },
+
+          addToWatchlist: (item: WatchlistItem) => {
+            set(
+              (state) => ({
+                watchlist: [...state.watchlist, item],
+              }),
+              false,
+              'addToWatchlist'
+            )
+          },
+
+          removeFromWatchlist: (symbol: string) => {
+            set(
+              (state) => ({
+                watchlist: state.watchlist.filter((w) => w.symbol !== symbol),
+              }),
+              false,
+              'removeFromWatchlist'
+            )
+          },
+
+          updateSettings: (newSettings: Partial<UserSettings>) => {
+            set(
+              (state) => ({
+                settings: { ...state.settings, ...newSettings },
+              }),
+              false,
+              'updateSettings'
+            )
+          },
+
+          resetAccount: () => {
+            set({
+              positions: [],
+              orders: [],
+              cashBalance: INITIAL_BALANCE,
+            }, false, 'resetAccount')
+          },
+
+          getActiveTicker: () => {
+            const { tickers, activeSymbol } = get()
+            return tickers.find((t) => t.symbol === activeSymbol)
+          },
+
+          getPortfolioValue: () => {
+            const { positions, cashBalance } = get()
+            const positionsValue = positions.reduce(
+              (sum, p) => sum + p.quantity * p.currentPrice,
+              0
+            )
+            const unrealizedPnL = positions.reduce(
+              (sum, p) => sum + p.unrealizedPnL,
+              0
+            )
+            const totalValue = positionsValue + cashBalance
+            const dailyPnL = unrealizedPnL // For now, daily P&L is same as unrealized
+            const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
+
+            return {
+              totalValue,
+              dailyPnL,
+              dailyPnLPercent,
+              unrealizedPnL,
+              positionsCount: positions.length,
+              buyingPower: cashBalance,
+            }
+          },
+        }),
+        {
+          name: 'trading-hub-storage',
+          partialize: (state) => ({
+            positions: state.positions,
+            orders: state.orders,
+            cashBalance: state.cashBalance,
+            watchlist: state.watchlist,
+            settings: state.settings,
           }),
-          false,
-          'updateTicker'
-        )
-      },
-
-      closePosition: (positionId: string) => {
-        set(
-          (state) => ({
-            positions: state.positions.filter((p) => p.id !== positionId),
-          }),
-          false,
-          'closePosition'
-        )
-      },
-
-      addOrder: (order: Order) => {
-        set(
-          (state) => ({
-            orders: [order, ...state.orders],
-          }),
-          false,
-          'addOrder'
-        )
-      },
-
-      addToWatchlist: (item: WatchlistItem) => {
-        set(
-          (state) => ({
-            watchlist: [...state.watchlist, item],
-          }),
-          false,
-          'addToWatchlist'
-        )
-      },
-
-      removeFromWatchlist: (symbol: string) => {
-        set(
-          (state) => ({
-            watchlist: state.watchlist.filter((w) => w.symbol !== symbol),
-          }),
-          false,
-          'removeFromWatchlist'
-        )
-      },
-
-      updateSettings: (newSettings: Partial<UserSettings>) => {
-        set(
-          (state) => ({
-            settings: { ...state.settings, ...newSettings },
-          }),
-          false,
-          'updateSettings'
-        )
-      },
-
-      getActiveTicker: () => {
-        const { tickers, activeSymbol } = get()
-        return tickers.find((t) => t.symbol === activeSymbol)
-      },
-
-      getPortfolioValue: () => {
-        const { positions } = get()
-        const totalValue = positions.reduce(
-          (sum, p) => sum + p.quantity * p.currentPrice,
-          0
-        )
-        const unrealizedPnL = positions.reduce(
-          (sum, p) => sum + p.unrealizedPnL,
-          0
-        )
-        const dailyPnL = unrealizedPnL * 0.3 // Mock daily P&L
-        const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
-        const buyingPower = 100000 - totalValue // Mock buying power
-
-        return {
-          totalValue,
-          dailyPnL,
-          dailyPnLPercent,
-          unrealizedPnL,
-          positionsCount: positions.length,
-          buyingPower,
         }
-      },
-    })),
+      )
+    ),
     { name: 'trading-store' }
   )
 )
@@ -206,10 +313,10 @@ interface PortfolioState {
 export const usePortfolioStore = create<PortfolioState>()(
   devtools(
     (set, get) => ({
-      positions: generatePositions(),
-      totalValue: 0,
+      positions: [], // Start with no positions
+      totalValue: INITIAL_BALANCE,
       totalPnl: 0,
-      cashBalance: 25000,
+      cashBalance: INITIAL_BALANCE,
 
       setPositions: (positions: Position[]) => {
         set({ positions }, false, 'setPositions')
@@ -265,7 +372,7 @@ interface OrdersState {
 export const useOrdersStore = create<OrdersState>()(
   devtools(
     (set, get) => ({
-      orders: generateOrders(15),
+      orders: [], // Start with no orders
 
       addOrder: (order: Order) => {
         set(
@@ -339,7 +446,7 @@ interface WatchlistState {
 export const useWatchlistStore = create<WatchlistState>()(
   devtools(
     (set, get) => ({
-      items: generateWatchlist(),
+      items: DEFAULT_WATCHLIST,
 
       addItem: (item: WatchlistItem) => {
         if (!get().isWatching(item.symbol)) {
