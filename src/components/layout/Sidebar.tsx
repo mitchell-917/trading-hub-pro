@@ -8,15 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
-  LineChart,
-  Wallet,
-  History,
-  Brain,
   Settings,
-  Star,
   PieChart,
-  TrendingUp,
-  Newspaper,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -42,18 +35,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', path: '/', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'charts', path: '/charts', label: 'Charts', icon: <LineChart className="w-5 h-5" /> },
   { id: 'portfolio', path: '/portfolio', label: 'Portfolio', icon: <PieChart className="w-5 h-5" /> },
   { id: 'scanner', path: '/scanner', label: 'Market Scanner', icon: <Search className="w-5 h-5" /> },
-  { id: 'watchlist', path: '/watchlist', label: 'Watchlist', icon: <Star className="w-5 h-5" /> },
-  { id: 'ai-signals', path: '/ai-signals', label: 'AI Signals', icon: <Brain className="w-5 h-5" />, badge: 3 },
-  { id: 'history', path: '/history', label: 'Trade History', icon: <History className="w-5 h-5" /> },
 ]
 
 const secondaryItems: NavItem[] = [
-  { id: 'markets', path: '/markets', label: 'Markets', icon: <TrendingUp className="w-5 h-5" /> },
-  { id: 'news', path: '/news', label: 'News', icon: <Newspaper className="w-5 h-5" /> },
-  { id: 'wallet', path: '/wallet', label: 'Wallet', icon: <Wallet className="w-5 h-5" /> },
+  { id: 'settings', path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ]
 
 export function Sidebar({
@@ -149,17 +136,6 @@ export function Sidebar({
             </>
           )}
         </button>
-
-        {/* Settings */}
-        <NavButton
-          item={{ id: 'settings', path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> }}
-          isActive={checkActive('/settings')}
-          isCollapsed={isCollapsed}
-          isHovered={hoveredItem === 'settings'}
-          onClick={() => handleNavClick('/settings')}
-          onMouseEnter={() => setHoveredItem('settings')}
-          onMouseLeave={() => setHoveredItem(null)}
-        />
       </div>
     </motion.aside>
   )
