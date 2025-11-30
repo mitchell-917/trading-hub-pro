@@ -35,40 +35,54 @@ export function useAISignals({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
-
-  const fetchSignals = useCallback(async () => {
-    if (!enabled) return
-
-    setIsLoading(true)
-    setError(null)
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    try {
-      const newSignals = generateAISignals(symbol, 5)
-      const newAnalysis = generateAIAnalysis(symbol)
-
-      setSignals(newSignals)
-      setAnalysis(newAnalysis)
-      setLastUpdated(Date.now())
-      setIsLoading(false)
-    } catch (err) {
-      setError('Failed to fetch AI signals')
-      setIsLoading(false)
-    }
-  }, [symbol, enabled])
+  const [refreshCounter, setRefreshCounter] = useState(0)
 
   useEffect(() => {
+    if (!enabled) return
+
+    let isMounted = true
+
+    const fetchSignals = async () => {
+      // Set loading at start of async operation
+      if (isMounted) {
+        setIsLoading(true)
+        setError(null)
+      }
+      
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
+      try {
+        const newSignals = generateAISignals(symbol, 5)
+        const newAnalysis = generateAIAnalysis(symbol)
+
+        if (isMounted) {
+          setSignals(newSignals)
+          setAnalysis(newAnalysis)
+          setLastUpdated(Date.now())
+          setIsLoading(false)
+        }
+      } catch {
+        if (isMounted) {
+          setError('Failed to fetch AI signals')
+          setIsLoading(false)
+        }
+      }
+    }
+
     fetchSignals()
 
     const interval = setInterval(fetchSignals, refreshInterval)
-    return () => clearInterval(interval)
-  }, [fetchSignals, refreshInterval])
+    
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [symbol, enabled, refreshInterval, refreshCounter])
 
   const refresh = useCallback(() => {
-    fetchSignals()
-  }, [fetchSignals])
+    setRefreshCounter((c) => c + 1)
+  }, [])
 
   return {
     signals,

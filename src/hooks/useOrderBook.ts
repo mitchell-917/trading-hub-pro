@@ -3,7 +3,7 @@
 // Real-time order book with depth visualization
 // ============================================
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import type { OrderBook, OrderBookEntry, Trade } from '@/types'
 import { generateOrderBook, generateTrades, randomBetween } from '@/lib/mock-data'
 
@@ -42,24 +42,38 @@ export function useOrderBook({
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const connect = useCallback(() => {
+  // Use refs to store latest values without causing re-renders
+  const currentPriceRef = useRef(currentPrice)
+  const symbolRef = useRef(symbol)
+  
+  // Update refs when values change
+  useEffect(() => {
+    currentPriceRef.current = currentPrice
+    symbolRef.current = symbol
+  }, [currentPrice, symbol])
+
+  useEffect(() => {
     if (!enabled || !currentPrice) return
 
-    setIsLoading(true)
+    let isMounted = true
     setError(null)
 
     // Initialize order book
-    setTimeout(() => {
+    const initTimeout = setTimeout(() => {
       try {
-        const initialOrderBook = generateOrderBook(currentPrice, depth)
-        const initialTrades = generateTrades(symbol, currentPrice, 20)
+        const initialOrderBook = generateOrderBook(currentPriceRef.current, depth)
+        const initialTrades = generateTrades(symbolRef.current, currentPriceRef.current, 20)
         
-        setOrderBook(initialOrderBook)
-        setRecentTrades(initialTrades)
-        setIsLoading(false)
+        if (isMounted) {
+          setOrderBook(initialOrderBook)
+          setRecentTrades(initialTrades)
+          setIsLoading(false)
+        }
 
         // Start real-time updates
         intervalRef.current = setInterval(() => {
+          if (!isMounted) return
+          
           setOrderBook((prev) => {
             if (!prev) return prev
 
@@ -97,12 +111,13 @@ export function useOrderBook({
 
           // Occasionally add new trades
           if (Math.random() > 0.5) {
+            const price = currentPriceRef.current
             const newTrade: Trade = {
               id: `trade-${Date.now()}`,
-              symbol,
+              symbol: symbolRef.current,
               side: Math.random() > 0.5 ? 'buy' : 'sell',
               price: Number(
-                (currentPrice + randomBetween(-0.5, 0.5)).toFixed(2)
+                (price + randomBetween(-0.5, 0.5)).toFixed(2)
               ),
               quantity: Number(randomBetween(0.01, 2).toFixed(4)),
               timestamp: Date.now(),
@@ -112,24 +127,25 @@ export function useOrderBook({
             setRecentTrades((prev) => [newTrade, ...prev.slice(0, 49)])
           }
         }, updateInterval)
-      } catch (_err) {
-        setError('Failed to connect to order book')
-        setIsLoading(false)
+      } catch {
+        if (isMounted) {
+          setError('Failed to connect to order book')
+          setIsLoading(false)
+        }
       }
     }, 200)
-  }, [symbol, currentPrice, depth, updateInterval, enabled])
 
-  const disconnect = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    return () => {
+      isMounted = false
+      clearTimeout(initTimeout)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }
-  }, [])
-
-  useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [connect, disconnect])
+  // Only re-run when symbol changes or enabled changes, not when currentPrice changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, depth, updateInterval, enabled])
 
   // Calculate derived values
   const { totalBidVolume, totalAskVolume, imbalance, maxDepth } = useMemo(() => {

@@ -98,7 +98,7 @@ export function useTrading(): UseTradingReturn {
         setIsSubmitting(false)
 
         return { success: true, order }
-      } catch (err) {
+      } catch {
         const error = 'Failed to place order'
         setLastError(error)
         setIsSubmitting(false)
@@ -120,7 +120,7 @@ export function useTrading(): UseTradingReturn {
         cancelStoreOrder(orderId)
         setIsSubmitting(false)
         return { success: true }
-      } catch (err) {
+      } catch {
         const error = 'Failed to cancel order'
         setLastError(error)
         setIsSubmitting(false)
@@ -156,7 +156,7 @@ export function useTrading(): UseTradingReturn {
         })
         setIsSubmitting(false)
         return { success: true }
-      } catch (err) {
+      } catch {
         const error = 'Failed to modify order'
         setLastError(error)
         setIsSubmitting(false)

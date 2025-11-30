@@ -46,27 +46,41 @@ export function useMarketData(
   const [error] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const reconnectTrigger = useRef(0)
 
-  const connect = useCallback(() => {
+  const reconnect = useCallback(() => {
+    // Will be set after connection is established
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    setIsConnected(false)
+    // Trigger re-connection via useEffect by updating ref and forcing re-render
+    reconnectTrigger.current += 1
+    setIsLoading(true)
+  }, [])
+
+  useEffect(() => {
     if (!enabled) return
 
-    setIsLoading(true)
+    let isMounted = true
 
     // Simulate connection delay
-    setTimeout(() => {
+    const initTimeout = setTimeout(() => {
       try {
         const initialTicker = generateTicker(symbol)
-        setTicker(initialTicker)
-        
-        // Generate initial OHLCV data
         const initialOhlcv = generateOHLCVData(symbol, 100)
-        setOhlcv(initialOhlcv)
         
-        setIsConnected(true)
-        setIsLoading(false)
+        if (isMounted) {
+          setTicker(initialTicker)
+          setOhlcv(initialOhlcv)
+          setIsConnected(true)
+          setIsLoading(false)
+        }
 
         // Start price updates
         intervalRef.current = setInterval(() => {
+          if (!isMounted) return
           setTicker((prev) => {
             if (!prev) return prev
 
@@ -87,30 +101,24 @@ export function useMarketData(
             }
           })
         }, updateInterval)
-      } catch (_err) {
+      } catch {
         // Error handled by setting isLoading to false
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }, 500)
-  }, [symbol, updateInterval, enabled])
 
-  const disconnect = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    return () => {
+      isMounted = false
+      clearTimeout(initTimeout)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      setIsConnected(false)
     }
-    setIsConnected(false)
-  }, [])
-
-  const reconnect = useCallback(() => {
-    disconnect()
-    connect()
-  }, [disconnect, connect])
-
-  useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [connect, disconnect])
+  }, [symbol, updateInterval, enabled])
 
   return {
     ticker,
@@ -152,10 +160,12 @@ export function useMultipleTickers({
   useEffect(() => {
     if (!enabled) return
 
-    setIsLoading(true)
+    let isMounted = true
 
     // Initialize tickers
-    setTimeout(() => {
+    const initTimeout = setTimeout(() => {
+      if (!isMounted) return
+      
       const initialTickers: Record<string, Ticker> = {}
       symbols.forEach((symbol) => {
         initialTickers[symbol] = generateTicker(symbol)
@@ -166,6 +176,7 @@ export function useMultipleTickers({
 
       // Start price updates
       intervalRef.current = setInterval(() => {
+        if (!isMounted) return
         setTickers((prev) => {
           const updated = { ...prev }
           
@@ -200,6 +211,8 @@ export function useMultipleTickers({
     }, 300)
 
     return () => {
+      isMounted = false
+      clearTimeout(initTimeout)
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
@@ -231,6 +244,16 @@ interface UseOHLCVDataReturn {
 /**
  * Hook for fetching OHLCV (candlestick) data
  */
+// Timeframe to milliseconds mapping - defined outside to avoid recreating
+const TIMEFRAME_TO_MS: Record<string, number> = {
+  '1m': 60000,
+  '5m': 300000,
+  '15m': 900000,
+  '1h': 3600000,
+  '4h': 14400000,
+  '1d': 86400000,
+}
+
 export function useOHLCVData({
   symbol,
   timeframe = '1h',
@@ -240,46 +263,51 @@ export function useOHLCVData({
   const [data, setData] = useState<OHLCV[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error] = useState<string | null>(null)
+  const [refetchCounter, setRefetchCounter] = useState(0)
 
-  const timeframeToMs: Record<string, number> = {
-    '1m': 60000,
-    '5m': 300000,
-    '15m': 900000,
-    '1h': 3600000,
-    '4h': 14400000,
-    '1d': 86400000,
-  }
+  const refetch = useCallback(() => {
+    setRefetchCounter((c) => c + 1)
+  }, [])
 
-  const fetchData = useCallback(() => {
+  useEffect(() => {
     if (!enabled) return
 
-    setIsLoading(true)
+    let isMounted = true
 
-    // Simulate API delay
-    setTimeout(() => {
+    // Simulate API delay - use setTimeout callback for state updates
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(true)
+      }
+      
       try {
         const ohlcvData = generateOHLCVData(
           symbol,
           count,
-          timeframeToMs[timeframe]
+          TIMEFRAME_TO_MS[timeframe]
         )
-        setData(ohlcvData)
-        setIsLoading(false)
-      } catch (_err) {
+        if (isMounted) {
+          setData(ohlcvData)
+          setIsLoading(false)
+        }
+      } catch {
         // Error handled by setting isLoading to false
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }, 200)
-  }, [symbol, timeframe, count, enabled])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    return () => {
+      isMounted = false
+      clearTimeout(timeout)
+    }
+  }, [symbol, timeframe, count, enabled, refetchCounter])
 
   return {
     data,
     isLoading,
     error,
-    refetch: fetchData,
+    refetch,
   }
 }
