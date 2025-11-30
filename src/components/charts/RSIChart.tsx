@@ -3,7 +3,7 @@
 // Relative Strength Index visualization
 // ============================================
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import {
   ComposedChart,
   Area,
@@ -26,6 +26,54 @@ interface RSIChartProps {
   className?: string
 }
 
+// Helper functions - defined outside component
+function getRSIColor(value: number, overboughtLevel: number, oversoldLevel: number) {
+  if (value >= overboughtLevel) return '#ff4757'
+  if (value <= oversoldLevel) return '#00d26a'
+  return '#6366f1'
+}
+
+function getRSILabel(value: number, overboughtLevel: number, oversoldLevel: number) {
+  if (value >= overboughtLevel) return 'Overbought'
+  if (value <= oversoldLevel) return 'Oversold'
+  return 'Neutral'
+}
+
+// Custom Tooltip Component - defined outside to avoid creating during render
+interface RSITooltipProps {
+  active?: boolean
+  payload?: Array<{ payload: RSIData & { formattedTime: string } }>
+  overboughtLevel: number
+  oversoldLevel: number
+}
+
+function RSIChartTooltip({ active, payload, overboughtLevel, oversoldLevel }: RSITooltipProps) {
+  if (!active || !payload || !payload.length) return null
+
+  const point = payload[0].payload
+  const color = getRSIColor(point.value, overboughtLevel, oversoldLevel)
+  const label = getRSILabel(point.value, overboughtLevel, oversoldLevel)
+
+  return (
+    <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
+      <div className="text-xs text-gray-400">
+        {format(new Date(point.timestamp), 'MMM d, HH:mm')}
+      </div>
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-sm font-medium number-mono" style={{ color }}>
+          RSI: {point.value.toFixed(2)}
+        </span>
+        <span
+          className="text-xs px-1.5 py-0.5 rounded"
+          style={{ backgroundColor: `${color}20`, color }}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function RSIChart({
   data,
   height = 120,
@@ -42,44 +90,10 @@ export function RSIChart({
 
   const latestRSI = data.length > 0 ? data[data.length - 1] : null
 
-  const getRSIColor = (value: number) => {
-    if (value >= overboughtLevel) return '#ff4757'
-    if (value <= oversoldLevel) return '#00d26a'
-    return '#6366f1'
-  }
-
-  const getRSILabel = (value: number) => {
-    if (value >= overboughtLevel) return 'Overbought'
-    if (value <= oversoldLevel) return 'Oversold'
-    return 'Neutral'
-  }
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: RSIData & { formattedTime: string } }> }) => {
-    if (!active || !payload || !payload.length) return null
-
-    const point = payload[0].payload
-    const color = getRSIColor(point.value)
-    const label = getRSILabel(point.value)
-
-    return (
-      <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
-        <div className="text-xs text-gray-400">
-          {format(new Date(point.timestamp), 'MMM d, HH:mm')}
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-sm font-medium number-mono" style={{ color }}>
-            RSI: {point.value.toFixed(2)}
-          </span>
-          <span
-            className="text-xs px-1.5 py-0.5 rounded"
-            style={{ backgroundColor: `${color}20`, color }}
-          >
-            {label}
-          </span>
-        </div>
-      </div>
-    )
-  }
+  // Memoized tooltip renderer
+  const renderTooltip = useCallback((props: { active?: boolean; payload?: Array<{ payload: RSIData & { formattedTime: string } }> }) => {
+    return <RSIChartTooltip {...props} overboughtLevel={overboughtLevel} oversoldLevel={oversoldLevel} />
+  }, [overboughtLevel, oversoldLevel])
 
   if (data.length === 0) {
     return (
@@ -89,6 +103,8 @@ export function RSIChart({
     )
   }
 
+  const latestColor = latestRSI ? getRSIColor(latestRSI.value, overboughtLevel, oversoldLevel) : '#6366f1'
+
   return (
     <div className={cn('relative', className)}>
       {/* Current RSI value */}
@@ -97,8 +113,8 @@ export function RSIChart({
           <div
             className="px-2 py-1 rounded text-xs font-medium number-mono"
             style={{
-              backgroundColor: `${getRSIColor(latestRSI.value)}20`,
-              color: getRSIColor(latestRSI.value),
+              backgroundColor: `${latestColor}20`,
+              color: latestColor,
             }}
           >
             RSI: {latestRSI.value.toFixed(1)}
@@ -165,7 +181,7 @@ export function RSIChart({
           />
 
           <Tooltip
-            content={<CustomTooltip />}
+            content={renderTooltip as never}
             cursor={{ stroke: '#4b5563', strokeDasharray: '3 3' }}
           />
 

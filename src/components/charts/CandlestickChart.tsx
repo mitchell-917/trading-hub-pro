@@ -3,7 +3,7 @@
 // Interactive candlestick chart with volume bars
 // ============================================
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import {
   ComposedChart,
   Bar,
@@ -31,6 +31,43 @@ interface CandleData extends OHLCV {
   wickHigh: [number, number]
   wickLow: [number, number]
   body: [number, number]
+}
+
+// Custom Tooltip Component - defined outside to avoid creating during render
+interface CandleTooltipProps {
+  active?: boolean
+  payload?: Array<{ payload: CandleData }>
+}
+
+function CandleChartTooltip({ active, payload }: CandleTooltipProps) {
+  if (!active || !payload || !payload.length) return null
+
+  const candle = payload[0].payload
+
+  return (
+    <div className="bg-gray-900/95 border border-gray-700 rounded-lg p-3 shadow-xl backdrop-blur-sm">
+      <div className="text-xs text-gray-400 mb-2">
+        {format(new Date(candle.timestamp), 'MMM d, yyyy HH:mm')}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <div className="text-gray-400">Open:</div>
+        <div className="text-right number-mono">{formatCurrency(candle.open)}</div>
+        <div className="text-gray-400">High:</div>
+        <div className="text-right number-mono text-emerald-400">{formatCurrency(candle.high)}</div>
+        <div className="text-gray-400">Low:</div>
+        <div className="text-right number-mono text-red-400">{formatCurrency(candle.low)}</div>
+        <div className="text-gray-400">Close:</div>
+        <div className={cn(
+          'text-right number-mono font-medium',
+          candle.close >= candle.open ? 'text-emerald-400' : 'text-red-400'
+        )}>
+          {formatCurrency(candle.close)}
+        </div>
+        <div className="text-gray-400">Volume:</div>
+        <div className="text-right number-mono">{formatCompact(candle.volume)}</div>
+      </div>
+    </div>
+  )
 }
 
 export function CandlestickChart({
@@ -76,36 +113,10 @@ export function CandlestickChart({
     return Math.max(...data.map((d) => d.volume))
   }, [data])
 
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: CandleData }> }) => {
-    if (!active || !payload || !payload.length) return null
-
-    const candle = payload[0].payload
-
-    return (
-      <div className="bg-gray-900/95 border border-gray-700 rounded-lg p-3 shadow-xl backdrop-blur-sm">
-        <div className="text-xs text-gray-400 mb-2">
-          {format(new Date(candle.timestamp), 'MMM d, yyyy HH:mm')}
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-          <div className="text-gray-400">Open:</div>
-          <div className="text-right number-mono">{formatCurrency(candle.open)}</div>
-          <div className="text-gray-400">High:</div>
-          <div className="text-right number-mono text-emerald-400">{formatCurrency(candle.high)}</div>
-          <div className="text-gray-400">Low:</div>
-          <div className="text-right number-mono text-red-400">{formatCurrency(candle.low)}</div>
-          <div className="text-gray-400">Close:</div>
-          <div className={cn(
-            'text-right number-mono font-medium',
-            candle.close >= candle.open ? 'text-emerald-400' : 'text-red-400'
-          )}>
-            {formatCurrency(candle.close)}
-          </div>
-          <div className="text-gray-400">Volume:</div>
-          <div className="text-right number-mono">{formatCompact(candle.volume)}</div>
-        </div>
-      </div>
-    )
-  }
+  // Memoized tooltip renderer
+  const renderTooltip = useCallback((props: CandleTooltipProps) => {
+    return <CandleChartTooltip {...props} />
+  }, [])
 
   if (data.length === 0) {
     return (
@@ -160,7 +171,7 @@ export function CandlestickChart({
           )}
 
           <Tooltip
-            content={<CustomTooltip />}
+            content={renderTooltip as never}
             cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
           />
 

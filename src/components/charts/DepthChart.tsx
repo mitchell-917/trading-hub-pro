@@ -3,7 +3,7 @@
 // Visualizes buy/sell order book depth
 // ============================================
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import {
   AreaChart,
   Area,
@@ -32,6 +32,36 @@ interface DepthDataPoint {
   cumulativeAsks: number
 }
 
+// Custom Tooltip Component - defined outside to avoid creating during render
+interface DepthTooltipProps {
+  active?: boolean
+  payload?: Array<{ payload: DepthDataPoint }>
+}
+
+function DepthChartTooltip({ active, payload }: DepthTooltipProps) {
+  if (!active || !payload || !payload.length) return null
+
+  const point = payload[0].payload
+  const isBid = point.cumulativeBids > 0
+
+  return (
+    <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
+      <div className="text-xs text-gray-400 mb-1">
+        Price: {formatCurrency(point.price)}
+      </div>
+      {isBid ? (
+        <div className="text-green-400 text-sm font-medium">
+          Cumulative Bids: {formatNumber(point.cumulativeBids, 2)}
+        </div>
+      ) : (
+        <div className="text-red-400 text-sm font-medium">
+          Cumulative Asks: {formatNumber(point.cumulativeAsks, 2)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function DepthChart({
   bids,
   asks,
@@ -45,30 +75,40 @@ export function DepthChart({
     const sortedAsks = [...asks].sort((a, b) => a.price - b.price)
 
     // Calculate cumulative depth for bids (from highest to lowest)
-    let cumulativeBid = 0
-    const bidPoints: DepthDataPoint[] = sortedBids.map((level) => {
-      cumulativeBid += level.total
-      return {
-        price: level.price,
-        bidDepth: level.total,
-        askDepth: 0,
-        cumulativeBids: cumulativeBid,
-        cumulativeAsks: 0,
-      }
-    }).reverse()
+    // Use reduce to avoid reassigning variable after render
+    const bidPoints: DepthDataPoint[] = sortedBids.reduce<{ points: DepthDataPoint[], cumulative: number }>(
+      (acc, level) => {
+        const newCumulative = acc.cumulative + level.total
+        acc.points.push({
+          price: level.price,
+          bidDepth: level.total,
+          askDepth: 0,
+          cumulativeBids: newCumulative,
+          cumulativeAsks: 0,
+        })
+        acc.cumulative = newCumulative
+        return acc
+      },
+      { points: [], cumulative: 0 }
+    ).points.reverse()
 
     // Calculate cumulative depth for asks (from lowest to highest)
-    let cumulativeAsk = 0
-    const askPoints: DepthDataPoint[] = sortedAsks.map((level) => {
-      cumulativeAsk += level.total
-      return {
-        price: level.price,
-        bidDepth: 0,
-        askDepth: level.total,
-        cumulativeBids: 0,
-        cumulativeAsks: cumulativeAsk,
-      }
-    })
+    // Use reduce to avoid reassigning variable after render
+    const askPoints: DepthDataPoint[] = sortedAsks.reduce<{ points: DepthDataPoint[], cumulative: number }>(
+      (acc, level) => {
+        const newCumulative = acc.cumulative + level.total
+        acc.points.push({
+          price: level.price,
+          bidDepth: 0,
+          askDepth: level.total,
+          cumulativeBids: 0,
+          cumulativeAsks: newCumulative,
+        })
+        acc.cumulative = newCumulative
+        return acc
+      },
+      { points: [], cumulative: 0 }
+    ).points
 
     return [...bidPoints, ...askPoints]
   }, [bids, asks])
@@ -99,29 +139,10 @@ export function DepthChart({
     }
   }, [bids, asks])
 
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: DepthDataPoint }> }) => {
-    if (!active || !payload || !payload.length) return null
-
-    const point = payload[0].payload
-    const isBid = point.cumulativeBids > 0
-
-    return (
-      <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
-        <div className="text-xs text-gray-400 mb-1">
-          Price: {formatCurrency(point.price)}
-        </div>
-        {isBid ? (
-          <div className="text-green-400 text-sm font-medium">
-            Cumulative Bids: {formatNumber(point.cumulativeBids, 2)}
-          </div>
-        ) : (
-          <div className="text-red-400 text-sm font-medium">
-            Cumulative Asks: {formatNumber(point.cumulativeAsks, 2)}
-          </div>
-        )}
-      </div>
-    )
-  }
+  // Memoized tooltip renderer
+  const renderTooltip = useCallback((props: DepthTooltipProps) => {
+    return <DepthChartTooltip {...props} />
+  }, [])
 
   if (chartData.length === 0) {
     return (
@@ -197,7 +218,7 @@ export function DepthChart({
             width={40}
           />
 
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={renderTooltip as never} />
 
           {calculatedMidPrice > 0 && (
             <ReferenceLine
