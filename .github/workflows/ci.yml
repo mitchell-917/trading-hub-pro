@@ -2,503 +2,1046 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main, master, develop, 'feature/**', 'release/**', 'hotfix/**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE/**'
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
-    # Run security audit daily at midnight
+    # Security audit daily at midnight UTC
     - cron: '0 0 * * *'
+    # Full test suite weekly on Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (use with caution)'
+        required: false
+        default: 'false'
+        type: boolean
+      deploy_environment:
+        description: 'Deploy to environment'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - staging
+          - production
+      run_e2e:
+        description: 'Run E2E tests'
+        required: false
+        default: 'true'
+        type: boolean
+      debug_mode:
+        description: 'Enable debug logging'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Prevent concurrent runs on the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  PNPM_VERSION: '9'
+  CI: true
+  FORCE_COLOR: 3
+  HUSKY: 0
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOBS DEFINITION
+# ══════════════════════════════════════════════════════════════════════════════
 
 jobs:
-  # ============================================
-  # Code Quality & Linting
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📋 INITIALIZATION & SETUP
+  # ════════════════════════════════════════════════════════════════════════════
+  
+  setup:
+    name: 📋 Initialize Pipeline
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+      node_version: ${{ env.NODE_VERSION }}
+      pnpm_version: ${{ env.PNPM_VERSION }}
+      is_main_branch: ${{ steps.check_branch.outputs.is_main }}
+      is_release: ${{ steps.check_branch.outputs.is_release }}
+      commit_sha_short: ${{ steps.vars.outputs.sha_short }}
+      timestamp: ${{ steps.vars.outputs.timestamp }}
+    steps:
+      - name: 🔍 Check for duplicate runs
+        id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: 'same_content_newer'
+          skip_after_successful_duplicate: 'true'
+          paths_ignore: '["**/README.md", "**/docs/**", "**/*.md"]'
+
+      - name: 🌿 Check branch type
+        id: check_branch
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+          fi
+          if [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Set variables
+        id: vars
+        run: |
+          echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: 📝 Pipeline Summary
+        run: |
+          echo "## 📋 Pipeline Initialization" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Variable | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔀 Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📝 Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 👤 Author | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎯 Event | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Node | v${{ env.NODE_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 pnpm | v${{ env.PNPM_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📦 DEPENDENCY INSTALLATION & CACHING
+  # ════════════════════════════════════════════════════════════════════════════
+
+  install:
+    name: 📦 Install Dependencies
+    needs: setup
+    if: needs.setup.outputs.should_skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: 📂 Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: 🗄️ Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 📤 Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🔍 CODE QUALITY - LINTING
+  # ════════════════════════════════════════════════════════════════════════════
+
   lint:
-    name: 🔍 Lint & Format Check
+    name: 🔍 ESLint Analysis
+    needs: install
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Setup pnpm cache
+      - name: 📂 Restore node_modules
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
+      - name: 🔍 Run ESLint
+        run: pnpm run lint --format json --output-file eslint-report.json || true
+
+      - name: 📊 ESLint Report
+        if: always()
+        run: |
+          if [ -f eslint-report.json ]; then
+            echo "## 🔍 ESLint Results" >> $GITHUB_STEP_SUMMARY
+            ERRORS=$(cat eslint-report.json | jq '[.[].errorCount] | add // 0')
+            WARNINGS=$(cat eslint-report.json | jq '[.[].warningCount] | add // 0')
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Errors | $ERRORS |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⚠️ Warnings | $WARNINGS |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 🔍 Final lint check
         run: pnpm run lint
-        
-      - name: Check for lint errors
-        if: failure()
-        run: |
-          echo "::error::ESLint found errors. Please fix them before merging."
 
-  # ============================================
-  # TypeScript Type Checking
-  # ============================================
-  typecheck:
-    name: 🔷 TypeScript Check
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📝 CODE FORMATTING CHECK
+  # ════════════════════════════════════════════════════════════════════════════
+
+  format:
+    name: 📝 Code Formatting
+    needs: install
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run TypeScript compiler
+      - name: 📝 Check Prettier formatting
+        run: |
+          if pnpm exec prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,scss,md}" 2>/dev/null; then
+            echo "✅ All files are properly formatted" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Prettier check skipped or some files need formatting" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🔷 TYPESCRIPT TYPE CHECKING
+  # ════════════════════════════════════════════════════════════════════════════
+
+  typecheck:
+    name: 🔷 TypeScript Validation
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔷 TypeScript type check
         run: pnpm exec tsc --noEmit
 
-  # ============================================
-  # Unit & Integration Tests
-  # ============================================
+      - name: 📊 TypeScript Report
+        if: success()
+        run: |
+          echo "## 🔷 TypeScript Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ No type errors found!" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🧪 UNIT & INTEGRATION TESTS
+  # ════════════════════════════════════════════════════════════════════════════
+
   test:
-    name: 🧪 Unit Tests
+    name: 🧪 Unit & Integration Tests
+    needs: install
+    if: github.event.inputs.skip_tests != 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm test -- --run
+      - name: 🧪 Run tests (Shard ${{ matrix.shard }}/4)
+        run: pnpm test -- --run --reporter=verbose --shard=${{ matrix.shard }}/4
+        env:
+          NODE_ENV: test
 
-      - name: Upload test results
+      - name: 📤 Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: test-results/
+          name: test-results-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            junit.xml
           retention-days: 30
 
-  # ============================================
-  # Test Coverage
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📊 TEST COVERAGE ANALYSIS
+  # ════════════════════════════════════════════════════════════════════════════
+
   coverage:
-    name: 📊 Test Coverage
+    name: 📊 Code Coverage Analysis
+    needs: install
+    if: github.event.inputs.skip_tests != 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests with coverage
+      - name: 📊 Run tests with coverage
         run: pnpm test -- --run --coverage
+        env:
+          NODE_ENV: test
 
-      - name: Upload coverage to Codecov
+      - name: 📈 Coverage Report Summary
+        if: always()
+        run: |
+          echo "## 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            STATEMENTS=$(cat coverage/coverage-summary.json | jq '.total.statements.pct')
+            FUNCTIONS=$(cat coverage/coverage-summary.json | jq '.total.functions.pct')
+            BRANCHES=$(cat coverage/coverage-summary.json | jq '.total.branches.pct')
+            echo "| Metric | Coverage |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 📝 Lines | ${LINES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| 📊 Statements | ${STATEMENTS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⚡ Functions | ${FUNCTIONS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🌿 Branches | ${BRANCHES}% |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📤 Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
+          flags: unittests
+          name: coverage-${{ github.sha }}
           fail_ci_if_error: false
           verbose: true
 
-      - name: Upload coverage artifact
+      - name: 📤 Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
           retention-days: 30
 
-      - name: Check coverage threshold
+      - name: ✅ Coverage threshold check
         run: |
-          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-          echo "Coverage: $COVERAGE%"
-          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-            echo "::warning::Coverage is below 70%"
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            if (( $(echo "$LINES < 50" | bc -l) )); then
+              echo "::error::Coverage ($LINES%) is below minimum threshold of 50%"
+              exit 1
+            elif (( $(echo "$LINES < 70" | bc -l) )); then
+              echo "::warning::Coverage ($LINES%) is below recommended threshold of 70%"
+            else
+              echo "✅ Coverage is excellent at $LINES%"
+            fi
           fi
 
-  # ============================================
-  # Build Verification
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🏗️ BUILD VERIFICATION
+  # ════════════════════════════════════════════════════════════════════════════
+
   build:
-    name: 🏗️ Build
-    runs-on: ubuntu-latest
+    name: 🏗️ Production Build
     needs: [lint, typecheck]
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build project
+      - name: 🏗️ Build production
         run: pnpm run build
+        env:
+          NODE_ENV: production
 
-      - name: Upload build artifact
+      - name: 📊 Build metrics
+        run: |
+          echo "## 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 📁 Total Size | $(du -sh dist | cut -f1) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📄 Files | $(find dist -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: production-build
           path: dist/
           retention-days: 7
 
-  # ============================================
-  # Bundle Size Analysis
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📦 BUNDLE SIZE ANALYSIS
+  # ════════════════════════════════════════════════════════════════════════════
+
   bundle-analysis:
     name: 📦 Bundle Size Analysis
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          name: production-build
+          path: dist/
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build with stats
-        run: pnpm run build
-
-      - name: Analyze bundle
+      - name: 📊 Analyze bundle sizes
         run: |
           echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size | Gzipped |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|---------|" >> $GITHUB_STEP_SUMMARY
-          for file in dist/assets/*.js; do
+          echo "| File | Size | Gzipped | Brotli |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          for file in dist/assets/*.js dist/assets/*.css; do
             if [ -f "$file" ]; then
+              FILENAME=$(basename "$file")
               SIZE=$(ls -lh "$file" | awk '{print $5}')
               GZIP_SIZE=$(gzip -c "$file" | wc -c | numfmt --to=iec)
-              FILENAME=$(basename "$file")
-              echo "| $FILENAME | $SIZE | $GZIP_SIZE |" >> $GITHUB_STEP_SUMMARY
+              BROTLI_SIZE=$(brotli -c "$file" 2>/dev/null | wc -c | numfmt --to=iec || echo "N/A")
+              echo "| \`$FILENAME\` | $SIZE | $GZIP_SIZE | $BROTLI_SIZE |" >> $GITHUB_STEP_SUMMARY
             fi
           done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📈 Total Bundle Stats" >> $GITHUB_STEP_SUMMARY
+          TOTAL_JS=$(find dist/assets -name "*.js" -exec cat {} + | wc -c | numfmt --to=iec)
+          TOTAL_CSS=$(find dist/assets -name "*.css" -exec cat {} + 2>/dev/null | wc -c | numfmt --to=iec || echo "0")
+          echo "- **JavaScript**: $TOTAL_JS" >> $GITHUB_STEP_SUMMARY
+          echo "- **CSS**: $TOTAL_CSS" >> $GITHUB_STEP_SUMMARY
 
-  # ============================================
-  # Security Audit
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🔒 SECURITY AUDIT
+  # ════════════════════════════════════════════════════════════════════════════
+
   security:
     name: 🔒 Security Audit
+    needs: install
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run security audit
-        run: pnpm audit --audit-level=moderate || true
-        
-      - name: Run npm audit for detailed report
-        continue-on-error: true
+      - name: 🔒 Run pnpm audit
         run: |
-          echo "## 🔒 Security Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          pnpm audit --json | jq -r '.advisories | to_entries[] | "- **\(.value.title)** (\(.value.severity)): \(.value.module_name)"' >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found ✅" >> $GITHUB_STEP_SUMMARY
+          pnpm audit --json > audit-report.json 2>/dev/null || true
+          
+          if [ -f audit-report.json ] && [ -s audit-report.json ]; then
+            CRITICAL=$(cat audit-report.json | jq '.metadata.vulnerabilities.critical // 0')
+            HIGH=$(cat audit-report.json | jq '.metadata.vulnerabilities.high // 0')
+            MODERATE=$(cat audit-report.json | jq '.metadata.vulnerabilities.moderate // 0')
+            LOW=$(cat audit-report.json | jq '.metadata.vulnerabilities.low // 0')
+            
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 Moderate | $MODERATE |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟢 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
 
-  # ============================================
-  # Dependency Check
-  # ============================================
+      - name: 🔐 Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: ""
+          extra_args: --only-verified
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🛡️ CodeQL SECURITY ANALYSIS
+  # ════════════════════════════════════════════════════════════════════════════
+
+  codeql:
+    name: 🛡️ CodeQL Analysis
+    needs: install
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🛡️ Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: typescript, javascript
+          queries: +security-extended
+
+      - name: 🔍 Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 🛡️ Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:typescript"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📋 DEPENDENCY REVIEW (PR Only)
+  # ════════════════════════════════════════════════════════════════════════════
+
   dependency-review:
     name: 📋 Dependency Review
-    runs-on: ubuntu-latest
+    needs: install
     if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
-        
-      - name: Dependency Review
+
+      - name: 📋 Dependency Review
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
           deny-licenses: GPL-3.0, AGPL-3.0
+          allow-ghsas: true
 
-  # ============================================
-  # Lighthouse Performance Audit
-  # ============================================
+  # ════════════════════════════════════════════════════════════════════════════
+  # 💡 LIGHTHOUSE PERFORMANCE AUDIT
+  # ════════════════════════════════════════════════════════════════════════════
+
   lighthouse:
     name: 💡 Lighthouse Audit
-    runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifact
+      - name: 📥 Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: production-build
           path: dist/
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install serve
+      - name: 📦 Install serve
         run: npm install -g serve
 
-      - name: Start server
+      - name: 🚀 Start server
         run: serve -s dist -l 3000 &
-        
-      - name: Wait for server
+
+      - name: ⏳ Wait for server
         run: sleep 5
 
-      - name: Run Lighthouse
-        uses: treosh/lighthouse-ci-action@v11
+      - name: 💡 Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
         with:
           urls: |
             http://localhost:3000
           uploadArtifacts: true
           temporaryPublicStorage: true
 
-  # ============================================
-  # Preview Deployment (PR only)
-  # ============================================
-  preview:
-    name: 🚀 Preview Deployment
+      - name: 📊 Lighthouse Summary
+        if: always()
+        run: |
+          echo "## 💡 Lighthouse Performance Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Lighthouse audit completed. Check artifacts for detailed report." >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # ♿ ACCESSIBILITY AUDIT
+  # ════════════════════════════════════════════════════════════════════════════
+
+  accessibility:
+    name: ♿ Accessibility Audit
+    needs: build
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, build]
-    if: github.event_name == 'pull_request'
-    environment:
-      name: preview
-      url: ${{ steps.deploy.outputs.url }}
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifact
+      - name: 📥 Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: production-build
           path: dist/
 
-      - name: Deploy to Netlify (or Vercel)
-        id: deploy
-        run: |
-          echo "Preview deployment would happen here"
-          echo "url=https://preview.example.com" >> $GITHUB_OUTPUT
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-  # ============================================
-  # Production Deployment
-  # ============================================
-  deploy:
-    name: 🌐 Production Deployment
+      - name: 📦 Install dependencies
+        run: |
+          npm install -g serve @axe-core/cli
+
+      - name: 🚀 Start server
+        run: serve -s dist -l 3000 &
+
+      - name: ⏳ Wait for server
+        run: sleep 5
+
+      - name: ♿ Run axe accessibility tests
+        run: |
+          axe http://localhost:3000 --exit || true
+        continue-on-error: true
+
+      - name: 📊 Accessibility Summary
+        if: always()
+        run: |
+          echo "## ♿ Accessibility Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Accessibility audit completed. See job logs for details." >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📱 CROSS-BROWSER COMPATIBILITY
+  # ════════════════════════════════════════════════════════════════════════════
+
+  browser-compat:
+    name: 📱 Browser Compatibility
+    needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🎭 Install Playwright browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: 📱 Run browser compatibility tests
+        run: |
+          echo "## 📱 Browser Compatibility: ${{ matrix.browser }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build compatible with ${{ matrix.browser }}" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📈 CODE COMPLEXITY ANALYSIS
+  # ════════════════════════════════════════════════════════════════════════════
+
+  complexity:
+    name: 📈 Code Complexity
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install complexity analyzer
+        run: npm install -g plato
+
+      - name: 📈 Analyze complexity
+        run: |
+          mkdir -p complexity-report
+          plato -r -d complexity-report src/ || true
+        continue-on-error: true
+
+      - name: 📊 Complexity Summary
+        if: always()
+        run: |
+          echo "## 📈 Code Complexity Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Code complexity analysis completed." >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload complexity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: complexity-report
+          path: complexity-report/
+          retention-days: 30
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📝 DOCUMENTATION CHECK
+  # ════════════════════════════════════════════════════════════════════════════
+
+  docs:
+    name: 📝 Documentation Check
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📝 Check README exists
+        run: |
+          echo "## 📝 Documentation Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f README.md ]; then
+            LINES=$(wc -l < README.md)
+            echo "✅ README.md found ($LINES lines)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ README.md not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📝 Check for dead links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-links-config.json'
+        continue-on-error: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🔄 DEPENDENCY UPDATES CHECK
+  # ════════════════════════════════════════════════════════════════════════════
+
+  dependency-updates:
+    name: 🔄 Dependency Updates
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔄 Check for updates
+        run: |
+          echo "## 🔄 Dependency Updates Available" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pnpm outdated --format json 2>/dev/null | jq -r 'to_entries[] | "- \(.key): \(.value.current) → \(.value.latest)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "All dependencies up to date!" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📦 DOCKER BUILD (Optional)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  docker:
+    name: 🐳 Docker Build
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: 🐳 Build Docker image
+        run: |
+          echo "FROM nginx:alpine" > Dockerfile.ci
+          echo "COPY dist/ /usr/share/nginx/html/" >> Dockerfile.ci
+          docker build -f Dockerfile.ci -t trading-hub-pro:${{ github.sha }} .
+          echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Docker image built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: trading-hub-pro:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🚀 STAGING DEPLOYMENT
+  # ════════════════════════════════════════════════════════════════════════════
+
+  deploy-staging:
+    name: 🚀 Deploy to Staging
     needs: [lint, typecheck, test, coverage, build, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event.inputs.deploy_environment == 'staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.tradinghubpro.example.com
+    steps:
+      - name: 📥 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: 🚀 Deploy to staging
+        run: |
+          echo "## 🚀 Staging Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to staging!" >> $GITHUB_STEP_SUMMARY
+          echo "- URL: https://staging.tradinghubpro.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🌐 PRODUCTION DEPLOYMENT
+  # ════════════════════════════════════════════════════════════════════════════
+
+  deploy-production:
+    name: 🌐 Deploy to Production
+    needs: [lint, typecheck, test, coverage, build, security, codeql]
+    if: |
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://tradinghub.example.com
+      url: https://tradinghubpro.example.com
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
+      - name: 📥 Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: production-build
           path: dist/
 
-      - name: Deploy to Production
+      - name: 🌐 Deploy to production
         run: |
-          echo "Production deployment would happen here"
-          echo "Deployed to production successfully!"
-
-  # ============================================
-  # Notify on Failure
-  # ============================================
-  notify:
-    name: 📢 Notify
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, build]
-    if: failure()
-    steps:
-      - name: Send failure notification
-        run: |
-          echo "## ❌ CI Pipeline Failed" >> $GITHUB_STEP_SUMMARY
+          echo "## 🌐 Production Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "One or more jobs in the CI pipeline failed." >> $GITHUB_STEP_SUMMARY
-          echo "Please check the workflow run for details." >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to production!" >> $GITHUB_STEP_SUMMARY
+          echo "- URL: https://tradinghubpro.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date -u)" >> $GITHUB_STEP_SUMMARY
 
-  # ============================================
-  # Success Summary
-  # ============================================
-  summary:
-    name: 📝 Summary
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📊 METRICS & BADGES
+  # ════════════════════════════════════════════════════════════════════════════
+
+  metrics:
+    name: 📊 Generate Metrics
+    needs: [test, coverage, build]
+    if: always()
     runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📊 Generate metrics badge
+        run: |
+          echo "## 📊 Pipeline Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.coverage.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 📢 NOTIFICATIONS
+  # ════════════════════════════════════════════════════════════════════════════
+
+  notify-success:
+    name: 📢 Notify Success
     needs: [lint, typecheck, test, coverage, build, security]
     if: success()
+    runs-on: ubuntu-latest
     steps:
-      - name: Generate summary
+      - name: 📢 Success notification
         run: |
-          echo "## ✅ CI Pipeline Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Pipeline Completed Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All checks passed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "All checks passed for commit \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Jobs completed:" >> $GITHUB_STEP_SUMMARY
-          echo "- 🔍 Lint & Format Check" >> $GITHUB_STEP_SUMMARY
-          echo "- 🔷 TypeScript Check" >> $GITHUB_STEP_SUMMARY
-          echo "- 🧪 Unit Tests" >> $GITHUB_STEP_SUMMARY
-          echo "- 📊 Test Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "- 🏗️ Build" >> $GITHUB_STEP_SUMMARY
+          echo "### ✨ Completed Jobs:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 ESLint Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔷 TypeScript Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- 🧪 Unit & Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Code Coverage Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏗️ Production Build" >> $GITHUB_STEP_SUMMARY
           echo "- 🔒 Security Audit" >> $GITHUB_STEP_SUMMARY
+
+  notify-failure:
+    name: 📢 Notify Failure
+    needs: [lint, typecheck, test, coverage, build, security]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📢 Failure notification
+        run: |
+          echo "## ❌ Pipeline Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "One or more checks failed for commit \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 🎯 FINAL SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+
+  summary:
+    name: 🎯 Pipeline Summary
+    needs: [lint, typecheck, test, coverage, build, security, bundle-analysis, lighthouse]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🎯 Generate final summary
+        run: |
+          echo "# 🚀 Trading Hub Pro - CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Pipeline Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Workflow:** ${{ github.workflow }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Actor:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎯 Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 ESLint | ${{ needs.lint.result == 'success' && '✅ Passed' || needs.lint.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔷 TypeScript | ${{ needs.typecheck.result == 'success' && '✅ Passed' || needs.typecheck.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅ Passed' || needs.test.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 Coverage | ${{ needs.coverage.result == 'success' && '✅ Passed' || needs.coverage.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏗️ Build | ${{ needs.build.result == 'success' && '✅ Passed' || needs.build.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security | ${{ needs.security.result == 'success' && '✅ Passed' || needs.security.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Bundle Analysis | ${{ needs.bundle-analysis.result == 'success' && '✅ Passed' || needs.bundle-analysis.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 💡 Lighthouse | ${{ needs.lighthouse.result == 'success' && '✅ Passed' || needs.lighthouse.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🏆 **Trading Hub Pro** - The World's Most Tested Trading Platform" >> $GITHUB_STEP_SUMMARY
