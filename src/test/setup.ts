@@ -28,7 +28,7 @@ class MockResizeObserver {
   unobserve = vi.fn()
   disconnect = vi.fn()
 }
-global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
+;(globalThis as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
 window.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
 
 // Mock IntersectionObserver as a proper class
@@ -37,5 +37,5 @@ class MockIntersectionObserver {
   unobserve = vi.fn()
   disconnect = vi.fn()
 }
-global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
+;(globalThis as unknown as { IntersectionObserver: typeof IntersectionObserver }).IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
