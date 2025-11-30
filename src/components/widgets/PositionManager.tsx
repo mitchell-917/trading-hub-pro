@@ -58,7 +58,7 @@ export function PositionManager({
 
   const handleClosePosition = () => {
     if (closingPosition) {
-      closePosition(closingPosition.id)
+      closePosition(closingPosition.id, closingPosition.currentPrice)
       setClosingPosition(null)
     }
   }
