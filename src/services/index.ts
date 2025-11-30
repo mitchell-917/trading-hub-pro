@@ -3,4 +3,5 @@
 // ============================================
 
 export * from './currency'
+export * from './exchangeRates'
 export * from './api'
