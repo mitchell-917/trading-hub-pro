@@ -2,6 +2,7 @@
 // useKeyboardShortcuts Hook Tests
 // ============================================
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { useKeyboardShortcuts, KeyboardShortcutsProvider, formatKey, KeyboardShortcutDisplay, defaultShortcuts } from '../useKeyboardShortcuts'
@@ -201,6 +202,11 @@ describe('defaultShortcuts', () => {
     expect(generalShortcuts.length).toBeGreaterThan(0)
   })
 
+  it('includes chart shortcuts', () => {
+    const chartShortcuts = defaultShortcuts.filter(s => s.category === 'chart')
+    expect(chartShortcuts.length).toBeGreaterThan(0)
+  })
+
   it('has valid shortcut structure', () => {
     defaultShortcuts.forEach(shortcut => {
       expect(shortcut).toHaveProperty('id')
@@ -209,5 +215,260 @@ describe('defaultShortcuts', () => {
       expect(shortcut).toHaveProperty('category')
       expect(Array.isArray(shortcut.keys)).toBe(true)
     })
+  })
+})
+
+describe('Keyboard Event Handling', () => {
+  it('ignores keyboard events when typing in input', () => {
+    const actionMock = vi.fn()
+    
+    function TestWithInput() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'test-input',
+          keys: ['t'],
+          description: 'Test',
+          category: 'general',
+          action: actionMock,
+        })
+      }, [registerShortcut])
+      
+      return <input data-testid="test-input" />
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestWithInput />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    const input = screen.getByTestId('test-input')
+    input.focus()
+    fireEvent.keyDown(input, { key: 't' })
+    
+    expect(actionMock).not.toHaveBeenCalled()
+  })
+
+  it('triggers single key shortcuts', () => {
+    const actionMock = vi.fn()
+    
+    function TestSingleKey() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'single-key',
+          keys: ['x'],
+          description: 'Single Key Test',
+          category: 'general',
+          action: actionMock,
+        })
+      }, [registerShortcut])
+      
+      return <div data-testid="container">Content</div>
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestSingleKey />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    fireEvent.keyDown(document, { key: 'x' })
+    
+    expect(actionMock).toHaveBeenCalled()
+  })
+
+  it('triggers modifier key shortcuts', () => {
+    const actionMock = vi.fn()
+    
+    function TestModifierKey() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'ctrl-key',
+          keys: ['Ctrl', 'j'],
+          description: 'Ctrl+J Test',
+          category: 'general',
+          action: actionMock,
+        })
+      }, [registerShortcut])
+      
+      return <div>Content</div>
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestModifierKey />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    fireEvent.keyDown(document, { key: 'j', ctrlKey: true })
+    
+    expect(actionMock).toHaveBeenCalled()
+  })
+
+  it('triggers key sequence shortcuts', async () => {
+    vi.useFakeTimers()
+    const actionMock = vi.fn()
+    
+    function TestSequence() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'sequence',
+          keys: ['g', 'h'],
+          description: 'Sequence Test',
+          category: 'navigation',
+          action: actionMock,
+        })
+      }, [registerShortcut])
+      
+      return <div>Content</div>
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestSequence />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    fireEvent.keyDown(document, { key: 'g' })
+    fireEvent.keyDown(document, { key: 'h' })
+    
+    expect(actionMock).toHaveBeenCalled()
+    
+    vi.useRealTimers()
+  })
+
+  it('does not trigger disabled shortcuts', () => {
+    const actionMock = vi.fn()
+    
+    function TestDisabled() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'disabled',
+          keys: ['y'],
+          description: 'Disabled Test',
+          category: 'general',
+          action: actionMock,
+          enabled: false,
+        })
+      }, [registerShortcut])
+      
+      return <div>Content</div>
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestDisabled />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    fireEvent.keyDown(document, { key: 'y' })
+    
+    expect(actionMock).not.toHaveBeenCalled()
+  })
+
+  it('updates existing shortcuts when re-registered', () => {
+    renderWithProviders()
+    
+    const addButton = screen.getByText('Add Shortcut')
+    
+    // Register same shortcut twice
+    fireEvent.click(addButton)
+    const countAfterFirst = parseInt(screen.getByTestId('shortcuts-count').textContent || '0')
+    
+    fireEvent.click(addButton)
+    const countAfterSecond = parseInt(screen.getByTestId('shortcuts-count').textContent || '0')
+    
+    // Count should be same since it's an update
+    expect(countAfterSecond).toBe(countAfterFirst)
+  })
+
+  it('ignores keyboard events in textarea', () => {
+    const actionMock = vi.fn()
+    
+    function TestWithTextarea() {
+      const { registerShortcut } = useKeyboardShortcuts()
+      
+      React.useEffect(() => {
+        registerShortcut({
+          id: 'test-textarea',
+          keys: ['t'],
+          description: 'Test',
+          category: 'general',
+          action: actionMock,
+        })
+      }, [registerShortcut])
+      
+      return <textarea data-testid="test-textarea" />
+    }
+    
+    render(
+      <BrowserRouter>
+        <KeyboardShortcutsProvider>
+          <TestWithTextarea />
+        </KeyboardShortcutsProvider>
+      </BrowserRouter>
+    )
+    
+    const textarea = screen.getByTestId('test-textarea')
+    textarea.focus()
+    fireEvent.keyDown(textarea, { key: 't' })
+    
+    expect(actionMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('formatKey edge cases', () => {
+  it('formats cmd key', () => {
+    expect(formatKey('cmd')).toBe('⌘')
+  })
+
+  it('formats enter key', () => {
+    expect(formatKey('enter')).toBe('↵')
+  })
+
+  it('formats left arrow key', () => {
+    expect(formatKey('arrowleft')).toBe('←')
+  })
+
+  it('formats right arrow key', () => {
+    expect(formatKey('arrowright')).toBe('→')
+  })
+
+  it('handles uppercase input', () => {
+    expect(formatKey('CTRL')).toBe('⌃')
+    expect(formatKey('SHIFT')).toBe('⇧')
+  })
+})
+
+describe('useKeyboardShortcuts error handling', () => {
+  it('throws error when used outside provider', () => {
+    function InvalidComponent() {
+      useKeyboardShortcuts()
+      return <div>Invalid</div>
+    }
+    
+    expect(() => {
+      render(<InvalidComponent />)
+    }).toThrow('useKeyboardShortcuts must be used within KeyboardShortcutsProvider')
   })
 })
