@@ -13,6 +13,7 @@ import { Settings } from '@/pages/Settings'
 import { ToastProvider } from '@/components/ui/Toast'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { KeyboardShortcutsProvider } from '@/hooks/useKeyboardShortcuts'
+import { CurrencyProvider } from '@/context/CurrencyContext'
 import './index.css'
 
 // Create React Query client
@@ -31,23 +32,25 @@ function App() {
   return (
     <ErrorBoundary showDetails>
       <QueryClientProvider client={queryClient}>
-        <KeyboardShortcutsProvider>
-          <ToastProvider position="top-right">
-            <BrowserRouter>
-              <div className="app">
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/portfolio" element={<Portfolio />} />
-                    <Route path="/scanner" element={<MarketScanner />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Layout>
-              </div>
-            </BrowserRouter>
-          </ToastProvider>
-        </KeyboardShortcutsProvider>
+        <CurrencyProvider autoDetect>
+          <KeyboardShortcutsProvider>
+            <ToastProvider position="top-right">
+              <BrowserRouter>
+                <div className="app">
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/portfolio" element={<Portfolio />} />
+                      <Route path="/scanner" element={<MarketScanner />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
+                </div>
+              </BrowserRouter>
+            </ToastProvider>
+          </KeyboardShortcutsProvider>
+        </CurrencyProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   )
