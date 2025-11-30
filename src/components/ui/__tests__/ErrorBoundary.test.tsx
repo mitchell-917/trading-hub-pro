@@ -145,10 +145,15 @@ describe('ErrorBoundary Component', () => {
 
   describe('Go Home Functionality', () => {
     it('clicking go home navigates to home page', () => {
-      // Mock window.location
+      // Mock window.location using Object.defineProperty
       const originalLocation = window.location
-      delete (window as { location?: Location }).location
-      window.location = { href: '' } as Location
+      const mockLocation = { href: '' }
+      
+      Object.defineProperty(window, 'location', {
+        value: mockLocation,
+        writable: true,
+        configurable: true,
+      })
       
       render(
         <ErrorBoundary>
@@ -159,9 +164,13 @@ describe('ErrorBoundary Component', () => {
       const goHomeButton = screen.getByRole('button', { name: /go home/i })
       fireEvent.click(goHomeButton)
       
-      expect(window.location.href).toBe('/')
+      expect(mockLocation.href).toBe('/')
       
-      window.location = originalLocation
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        writable: true,
+        configurable: true,
+      })
     })
   })
 
