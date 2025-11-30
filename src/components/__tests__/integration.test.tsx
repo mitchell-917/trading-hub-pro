@@ -3,10 +3,8 @@
 // ============================================
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 // Mock the stores
 const mockTradingStore = {
@@ -82,8 +80,8 @@ vi.mock('../lib/store', () => ({
   })),
 }))
 
-// Test wrapper with providers
-const TestWrapper = ({ children }: { children: ReactNode }) => {
+// Test wrapper for providers (used for context-based tests)
+const _TestWrapper = ({ children }: { children: ReactNode }) => {
   return <>{children}</>
 }
 

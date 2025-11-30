@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+;(globalThis as { fetch: typeof mockFetch }).fetch = mockFetch
 
 describe('API Data Fetching', () => {
   beforeEach(() => {

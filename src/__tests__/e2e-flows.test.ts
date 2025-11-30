@@ -2,7 +2,7 @@
 // E2E-Style Integration Tests for Trading Application
 // ============================================
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 
 // Mock WebSocket
 class MockWebSocket {
@@ -32,7 +32,7 @@ class MockWebSocket {
   }
 }
 
-// Test data generators
+// Test data generators - used for dynamic test data
 const generateMockTicker = (symbol: string) => ({
   symbol,
   name: `${symbol} Token`,
@@ -45,7 +45,8 @@ const generateMockTicker = (symbol: string) => ({
   lastUpdated: Date.now(),
 })
 
-const generateMockPosition = (symbol: string, id: string) => ({
+// Helper for position generation (available for test setup)
+const _generateMockPosition = (symbol: string, id: string) => ({
   id,
   symbol,
   name: `${symbol} Token`,
@@ -63,7 +64,8 @@ const generateMockPosition = (symbol: string, id: string) => ({
   lastUpdated: Date.now(),
 })
 
-const generateMockOrder = (symbol: string, id: string) => ({
+// Helper for order generation (available for test setup)
+const _generateMockOrder = (symbol: string, id: string) => ({
   id,
   symbol,
   side: Math.random() > 0.5 ? 'buy' : 'sell' as const,
@@ -465,8 +467,8 @@ describe('Trading Application E2E Flows', () => {
     it('calculates value at risk', () => {
       const portfolioValue = 100000
       const dailyVolatility = 0.02 // 2%
-      const confidenceLevel = 0.95
-      const zScore = 1.645 // 95% confidence
+      // z-score for 95% confidence level
+      const zScore = 1.645
       const var95 = portfolioValue * dailyVolatility * zScore
       expect(var95).toBeCloseTo(3290, 0)
     })

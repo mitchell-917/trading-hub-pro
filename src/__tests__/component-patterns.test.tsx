@@ -276,7 +276,7 @@ describe('Effect Patterns', () => {
     }
 
     beforeEach(() => {
-      vi.spyOn(global, 'fetch').mockResolvedValue({
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         json: () => Promise.resolve({ id: 1, name: 'John' }),
       } as Response)
     })
@@ -298,7 +298,7 @@ describe('Effect Patterns', () => {
     })
 
     it('handles fetch error', async () => {
-      vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'))
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
       render(<UserProfile userId={1} />)
       await waitFor(() => {
         expect(screen.getByTestId('error')).toHaveTextContent('Network error')
