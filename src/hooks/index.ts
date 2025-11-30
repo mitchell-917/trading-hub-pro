@@ -58,3 +58,16 @@ export {
   useCryptoFiatRate,
   useForexMarketMovers,
 } from './useForexData'
+export {
+  useNews,
+  useBreakingNews,
+  useNewsByCategory,
+  useNewsBySymbols,
+  useMarketSentiment,
+  useNewsSearch,
+  useCryptoNews,
+  useTrendingTopics,
+  useCoinNews,
+  useMarketNews,
+  usePortfolioNews,
+} from './useNews'
