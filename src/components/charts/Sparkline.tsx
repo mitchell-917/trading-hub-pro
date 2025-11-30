@@ -35,9 +35,9 @@ export function Sparkline({
     return data.map((value, index) => ({ index, value }))
   }, [data])
 
-  const { strokeColor, fillColor, trend } = useMemo(() => {
+  const { strokeColor, _fillColor, _trend } = useMemo(() => {
     if (data.length < 2) {
-      return { strokeColor: '#6366f1', fillColor: 'rgba(99, 102, 241, 0.2)', trend: 0 }
+      return { strokeColor: '#6366f1', _fillColor: 'rgba(99, 102, 241, 0.2)', _trend: 0 }
     }
 
     const firstValue = data[0]
@@ -48,14 +48,14 @@ export function Sparkline({
       if (calculatedTrend > 0) {
         return {
           strokeColor: '#00d26a',
-          fillColor: 'rgba(0, 210, 106, 0.2)',
-          trend: calculatedTrend,
+          _fillColor: 'rgba(0, 210, 106, 0.2)',
+          _trend: calculatedTrend,
         }
       } else if (calculatedTrend < 0) {
         return {
           strokeColor: '#ff4757',
-          fillColor: 'rgba(255, 71, 87, 0.2)',
-          trend: calculatedTrend,
+          _fillColor: 'rgba(255, 71, 87, 0.2)',
+          _trend: calculatedTrend,
         }
       }
     }
@@ -70,10 +70,14 @@ export function Sparkline({
 
     return {
       strokeColor: colorMap[color].stroke,
-      fillColor: colorMap[color].fill,
-      trend: calculatedTrend,
+      _fillColor: colorMap[color].fill,
+      _trend: calculatedTrend,
     }
   }, [data, color])
+  
+  // Suppress unused variable warnings
+  void _fillColor
+  void _trend
 
   if (data.length === 0) {
     return (

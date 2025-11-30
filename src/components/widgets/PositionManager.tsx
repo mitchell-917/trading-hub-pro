@@ -369,7 +369,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
                   variant="ghost"
                   size="sm"
                   fullWidth
-                  icon={<MoreHorizontal className="w-4 h-4" />}
+                  leftIcon={<MoreHorizontal className="w-4 h-4" />}
                 >
                   Modify
                 </Button>
@@ -377,7 +377,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
                   variant="danger"
                   size="sm"
                   fullWidth
-                  icon={<X className="w-4 h-4" />}
+                  leftIcon={<X className="w-4 h-4" />}
                   onClick={(e) => {
                     e.stopPropagation()
                     onClose()

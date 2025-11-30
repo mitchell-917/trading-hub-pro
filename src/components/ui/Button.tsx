@@ -3,8 +3,10 @@
 // Premium button with multiple variants and states
 // ============================================
 
-import { forwardRef, ButtonHTMLAttributes } from 'react'
-import { motion, HTMLMotionProps } from 'framer-motion'
+import { forwardRef } from 'react'
+import type { ButtonHTMLAttributes } from 'react'
+import { motion } from 'framer-motion'
+import type { HTMLMotionProps } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

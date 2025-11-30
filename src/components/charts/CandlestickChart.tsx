@@ -13,7 +13,6 @@ import {
   ResponsiveContainer,
   Cell,
   ReferenceLine,
-  Area,
 } from 'recharts'
 import { format } from 'date-fns'
 import type { OHLCV } from '@/types'

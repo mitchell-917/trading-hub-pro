@@ -64,14 +64,14 @@ export function useOrderBook({
             if (!prev) return prev
 
             // Simulate order book changes
-            const newBids = prev.bids.map((bid) => ({
+            const newBids = prev.bids.map((bid: OrderBookEntry) => ({
               ...bid,
               quantity: Number(
                 Math.max(0.1, bid.quantity * randomBetween(0.9, 1.1)).toFixed(4)
               ),
             }))
 
-            const newAsks = prev.asks.map((ask) => ({
+            const newAsks = prev.asks.map((ask: OrderBookEntry) => ({
               ...ask,
               quantity: Number(
                 Math.max(0.1, ask.quantity * randomBetween(0.9, 1.1)).toFixed(4)
@@ -82,12 +82,12 @@ export function useOrderBook({
             let bidTotal = 0
             let askTotal = 0
 
-            newBids.forEach((bid) => {
+            newBids.forEach((bid: OrderBookEntry) => {
               bidTotal += bid.quantity * bid.price
               bid.total = Number(bidTotal.toFixed(2))
             })
 
-            newAsks.forEach((ask) => {
+            newAsks.forEach((ask: OrderBookEntry) => {
               askTotal += ask.quantity * ask.price
               ask.total = Number(askTotal.toFixed(2))
             })
@@ -112,7 +112,7 @@ export function useOrderBook({
             setRecentTrades((prev) => [newTrade, ...prev.slice(0, 49)])
           }
         }, updateInterval)
-      } catch (err) {
+      } catch (_err) {
         setError('Failed to connect to order book')
         setIsLoading(false)
       }
@@ -137,13 +137,13 @@ export function useOrderBook({
       return { totalBidVolume: 0, totalAskVolume: 0, imbalance: 0, maxDepth: 0 }
     }
 
-    const bidVolume = orderBook.bids.reduce((sum, b) => sum + b.quantity, 0)
-    const askVolume = orderBook.asks.reduce((sum, a) => sum + a.quantity, 0)
+    const bidVolume = orderBook.bids.reduce((sum: number, b: OrderBookEntry) => sum + b.quantity, 0)
+    const askVolume = orderBook.asks.reduce((sum: number, a: OrderBookEntry) => sum + a.quantity, 0)
     const total = bidVolume + askVolume
     const imbalanceValue = total > 0 ? (bidVolume - askVolume) / total : 0
 
-    const maxBidQty = Math.max(...orderBook.bids.map((b) => b.quantity))
-    const maxAskQty = Math.max(...orderBook.asks.map((a) => a.quantity))
+    const maxBidQty = Math.max(...orderBook.bids.map((b: OrderBookEntry) => b.quantity))
+    const maxAskQty = Math.max(...orderBook.asks.map((a: OrderBookEntry) => a.quantity))
 
     return {
       totalBidVolume: bidVolume,

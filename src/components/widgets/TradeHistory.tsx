@@ -16,7 +16,7 @@ import {
   Clock,
   ChevronDown,
 } from 'lucide-react'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -44,9 +44,9 @@ export function TradeHistory({
   // Filter orders based on status
   const filteredOrders = useMemo(() => {
     if (filter === 'all') return orders
-    if (filter === 'filled') return orders.filter((o) => o.status === 'filled')
-    if (filter === 'cancelled') return orders.filter((o) => o.status === 'cancelled')
-    if (filter === 'pending') return orders.filter((o) => 
+    if (filter === 'filled') return orders.filter((o: Order) => o.status === 'filled')
+    if (filter === 'cancelled') return orders.filter((o: Order) => o.status === 'cancelled')
+    if (filter === 'pending') return orders.filter((o: Order) => 
       o.status === 'pending' || o.status === 'open'
     )
     return orders
@@ -54,11 +54,11 @@ export function TradeHistory({
 
   // Calculate stats
   const stats = useMemo(() => {
-    const filledOrders = orders.filter((o) => o.status === 'filled')
-    const buyOrders = filledOrders.filter((o) => o.side === 'buy')
-    const sellOrders = filledOrders.filter((o) => o.side === 'sell')
-    const totalVolume = filledOrders.reduce((sum, o) => 
-      sum + (o.quantity * (o.filledPrice || o.price)), 0
+    const filledOrders = orders.filter((o: Order) => o.status === 'filled')
+    const buyOrders = filledOrders.filter((o: Order) => o.side === 'buy')
+    const sellOrders = filledOrders.filter((o: Order) => o.side === 'sell')
+    const totalVolume = filledOrders.reduce((sum: number, o: Order) => 
+      sum + (o.quantity * (o.price ?? 0)), 0
     )
 
     return {
@@ -96,7 +96,7 @@ export function TradeHistory({
             variant="ghost"
             size="sm"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            icon={<Filter className="w-4 h-4" />}
+            leftIcon={<Filter className="w-4 h-4" />}
           >
             {filterOptions.find((f) => f.value === filter)?.label}
             <ChevronDown className="w-3 h-3 ml-1" />
@@ -234,15 +234,15 @@ function OrderRow({ order, index }: OrderRowProps) {
       color: 'blue', 
       label: 'Open' 
     },
+    'partially-filled': { 
+      icon: <Clock className="w-3 h-3" />, 
+      color: 'yellow', 
+      label: 'Partial' 
+    },
     rejected: { 
       icon: <XCircle className="w-3 h-3" />, 
       color: 'red', 
       label: 'Rejected' 
-    },
-    expired: { 
-      icon: <XCircle className="w-3 h-3" />, 
-      color: 'gray', 
-      label: 'Expired' 
     },
   }
 
@@ -295,7 +295,7 @@ function OrderRow({ order, index }: OrderRowProps) {
           {formatNumber(order.quantity, 4)}
         </p>
         <p className="text-xs text-gray-400 number-mono">
-          @ {formatCurrency(order.filledPrice || order.price)}
+          @ {formatCurrency(order.price ?? 0)}
         </p>
       </div>
     </motion.div>

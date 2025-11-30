@@ -26,18 +26,43 @@ import {
 // Trading Store
 // ============================================
 
+interface UserSettings {
+  theme: 'dark' | 'light'
+  notifications: boolean
+  sound: boolean
+}
+
 interface TradingState {
   // Market Data
   tickers: Ticker[]
   activeSymbol: string
+  selectedSymbol: string
+  positions: Position[]
+  orders: Order[]
+  watchlist: WatchlistItem[]
+  settings: UserSettings
   
   // Actions
   setActiveSymbol: (symbol: string) => void
+  setSelectedSymbol: (symbol: string) => void
   updateTickers: (tickers: Ticker[]) => void
   updateTicker: (ticker: Ticker) => void
+  closePosition: (positionId: string) => void
+  addOrder: (order: Order) => void
+  addToWatchlist: (item: WatchlistItem) => void
+  removeFromWatchlist: (symbol: string) => void
+  updateSettings: (settings: Partial<UserSettings>) => void
   
   // Selectors
   getActiveTicker: () => Ticker | undefined
+  getPortfolioValue: () => {
+    totalValue: number
+    dailyPnL: number
+    dailyPnLPercent: number
+    unrealizedPnL: number
+    positionsCount: number
+    buyingPower: number
+  }
 }
 
 export const useTradingStore = create<TradingState>()(
@@ -45,9 +70,22 @@ export const useTradingStore = create<TradingState>()(
     subscribeWithSelector((set, get) => ({
       tickers: generateAllTickers(),
       activeSymbol: 'BTC',
+      selectedSymbol: 'BTC',
+      positions: generatePositions(),
+      orders: generateOrders(15),
+      watchlist: generateWatchlist(),
+      settings: {
+        theme: 'dark',
+        notifications: true,
+        sound: true,
+      },
 
       setActiveSymbol: (symbol: string) => {
         set({ activeSymbol: symbol }, false, 'setActiveSymbol')
+      },
+
+      setSelectedSymbol: (symbol: string) => {
+        set({ selectedSymbol: symbol }, false, 'setSelectedSymbol')
       },
 
       updateTickers: (tickers: Ticker[]) => {
@@ -66,9 +104,83 @@ export const useTradingStore = create<TradingState>()(
         )
       },
 
+      closePosition: (positionId: string) => {
+        set(
+          (state) => ({
+            positions: state.positions.filter((p) => p.id !== positionId),
+          }),
+          false,
+          'closePosition'
+        )
+      },
+
+      addOrder: (order: Order) => {
+        set(
+          (state) => ({
+            orders: [order, ...state.orders],
+          }),
+          false,
+          'addOrder'
+        )
+      },
+
+      addToWatchlist: (item: WatchlistItem) => {
+        set(
+          (state) => ({
+            watchlist: [...state.watchlist, item],
+          }),
+          false,
+          'addToWatchlist'
+        )
+      },
+
+      removeFromWatchlist: (symbol: string) => {
+        set(
+          (state) => ({
+            watchlist: state.watchlist.filter((w) => w.symbol !== symbol),
+          }),
+          false,
+          'removeFromWatchlist'
+        )
+      },
+
+      updateSettings: (newSettings: Partial<UserSettings>) => {
+        set(
+          (state) => ({
+            settings: { ...state.settings, ...newSettings },
+          }),
+          false,
+          'updateSettings'
+        )
+      },
+
       getActiveTicker: () => {
         const { tickers, activeSymbol } = get()
         return tickers.find((t) => t.symbol === activeSymbol)
+      },
+
+      getPortfolioValue: () => {
+        const { positions } = get()
+        const totalValue = positions.reduce(
+          (sum, p) => sum + p.quantity * p.currentPrice,
+          0
+        )
+        const unrealizedPnL = positions.reduce(
+          (sum, p) => sum + p.unrealizedPnL,
+          0
+        )
+        const dailyPnL = unrealizedPnL * 0.3 // Mock daily P&L
+        const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
+        const buyingPower = 100000 - totalValue // Mock buying power
+
+        return {
+          totalValue,
+          dailyPnL,
+          dailyPnLPercent,
+          unrealizedPnL,
+          positionsCount: positions.length,
+          buyingPower,
+        }
       },
     })),
     { name: 'trading-store' }
@@ -369,7 +481,7 @@ export const useChartStore = create<ChartState>()(
               ...state.config,
               indicators: {
                 ...state.config.indicators,
-                sma: [...state.config.indicators.sma, period].sort((a, b) => a - b),
+                sma: [...state.config.indicators.sma, period].sort((a: number, b: number) => a - b),
               },
             },
           }),
@@ -385,7 +497,7 @@ export const useChartStore = create<ChartState>()(
               ...state.config,
               indicators: {
                 ...state.config.indicators,
-                sma: state.config.indicators.sma.filter((p) => p !== period),
+                sma: state.config.indicators.sma.filter((p: number) => p !== period),
               },
             },
           }),
@@ -401,7 +513,7 @@ export const useChartStore = create<ChartState>()(
               ...state.config,
               indicators: {
                 ...state.config.indicators,
-                ema: [...state.config.indicators.ema, period].sort((a, b) => a - b),
+                ema: [...state.config.indicators.ema, period].sort((a: number, b: number) => a - b),
               },
             },
           }),
@@ -417,7 +529,7 @@ export const useChartStore = create<ChartState>()(
               ...state.config,
               indicators: {
                 ...state.config.indicators,
-                ema: state.config.indicators.ema.filter((p) => p !== period),
+                ema: state.config.indicators.ema.filter((p: number) => p !== period),
               },
             },
           }),

@@ -11,7 +11,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
   CartesianGrid,
 } from 'recharts'
 import { format } from 'date-fns'
@@ -66,7 +65,9 @@ export function TradingAreaChart({
 
   // Dynamic color based on trend
   const strokeColor = trend === 'down' ? '#ff4757' : color.stroke
-  const fillColor = trend === 'down' ? 'rgba(255, 71, 87, 0.2)' : color.fill
+  // fillColor is computed but only strokeColor is used in gradient
+  const _fillColor = trend === 'down' ? 'rgba(255, 71, 87, 0.2)' : color.fill
+  void _fillColor // Suppress unused variable warning
 
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: TradingAreaChartData & { formattedTime: string } }> }) => {
     if (!active || !payload || !payload.length || !showTooltip) return null

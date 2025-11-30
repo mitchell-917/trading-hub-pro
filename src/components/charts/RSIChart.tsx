@@ -7,7 +7,6 @@ import { useMemo } from 'react'
 import {
   ComposedChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   Tooltip,

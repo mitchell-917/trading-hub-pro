@@ -3,9 +3,9 @@
 // AI-powered trading signals with explanations
 // ============================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { AISignal, AIAnalysis, OHLCV } from '@/types'
-import { generateAISignals, generateAIAnalysis, randomBetween } from '@/lib/mock-data'
+import { generateAISignals, generateAIAnalysis } from '@/lib/mock-data'
 
 interface UseAISignalsOptions {
   symbol: string

@@ -9,9 +9,7 @@ import {
   Star, 
   Plus, 
   Search, 
-  X, 
-  TrendingUp, 
-  TrendingDown,
+  X,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react'
@@ -23,6 +21,7 @@ import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
 import { useMarketData } from '@/hooks/useMarketData'
 import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import type { WatchlistItem } from '@/types'
 
 interface WatchlistProps {
   onSelectSymbol?: (symbol: string) => void
@@ -55,8 +54,9 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
 
   const filteredSymbols = useMemo(() => {
     const query = searchQuery.toLowerCase()
+    const watchlistSymbols = watchlist.map((item: WatchlistItem) => item.symbol)
     return AVAILABLE_SYMBOLS
-      .filter((s) => !watchlist.includes(s))
+      .filter((s) => !watchlistSymbols.includes(s))
       .filter((s) => s.toLowerCase().includes(query))
   }, [searchQuery, watchlist])
 
@@ -72,7 +72,7 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
           <Button
             variant="ghost"
             size="sm"
-            icon={<Plus className="w-4 h-4" />}
+            leftIcon={<Plus className="w-4 h-4" />}
             onClick={() => setIsAddModalOpen(true)}
           >
             Add
@@ -96,14 +96,14 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
         ) : (
           <div className="space-y-1">
             <AnimatePresence mode="popLayout">
-              {watchlist.map((symbol, index) => (
-                <WatchlistItem
-                  key={symbol}
-                  symbol={symbol}
-                  isSelected={symbol === selectedSymbol}
+              {watchlist.map((item: WatchlistItem, index: number) => (
+                <WatchlistItemRow
+                  key={item.symbol}
+                  symbol={item.symbol}
+                  isSelected={item.symbol === selectedSymbol}
                   index={index}
-                  onSelect={() => handleSelectSymbol(symbol)}
-                  onRemove={() => removeFromWatchlist(symbol)}
+                  onSelect={() => handleSelectSymbol(item.symbol)}
+                  onRemove={() => removeFromWatchlist(item.symbol)}
                 />
               ))}
             </AnimatePresence>
@@ -139,7 +139,7 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
                 <button
                   key={symbol}
                   onClick={() => {
-                    addToWatchlist(symbol)
+                    addToWatchlist({ symbol, name: symbol, addedAt: Date.now() })
                     setIsAddModalOpen(false)
                     setSearchQuery('')
                   }}
@@ -158,10 +158,10 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
 }
 
 // ============================================
-// Watchlist Item Component
+// Watchlist Item Row Component
 // ============================================
 
-interface WatchlistItemProps {
+interface WatchlistItemRowProps {
   symbol: string
   isSelected: boolean
   index: number
@@ -169,17 +169,17 @@ interface WatchlistItemProps {
   onRemove: () => void
 }
 
-function WatchlistItem({ 
+function WatchlistItemRow({ 
   symbol, 
   isSelected, 
   index, 
   onSelect, 
   onRemove 
-}: WatchlistItemProps) {
+}: WatchlistItemRowProps) {
   const { ticker } = useMarketData(symbol)
   const [isHovered, setIsHovered] = useState(false)
 
-  const isPositive = (ticker?.priceChange24h ?? 0) >= 0
+  const isPositive = (ticker?.change ?? 0) >= 0
 
   // Generate sparkline data
   const sparklineData = useMemo(() => {
@@ -229,8 +229,8 @@ function WatchlistItem({
           <div className="text-left">
             <p className="font-medium">{symbol}</p>
             <p className="text-xs text-gray-400">
-              Vol: {ticker?.volume24h 
-                ? `${(ticker.volume24h / 1e6).toFixed(1)}M` 
+              Vol: {ticker?.volume 
+                ? `${(ticker.volume / 1e6).toFixed(1)}M` 
                 : '-'}
             </p>
           </div>
@@ -255,7 +255,7 @@ function WatchlistItem({
               'text-xs number-mono',
               isPositive ? 'text-green-400' : 'text-red-400'
             )}>
-              {ticker ? formatPercentage(ticker.priceChangePercent24h ?? 0) : '-'}
+              {ticker ? formatPercentage(ticker.changePercent ?? 0) : '-'}
             </p>
           </div>
 

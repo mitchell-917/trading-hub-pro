@@ -3,7 +3,7 @@
 // Main trading dashboard view
 // ============================================
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   TrendingUp,
@@ -46,12 +46,11 @@ export function Dashboard() {
   const setSelectedSymbol = useTradingStore((s) => s.setSelectedSymbol)
   const portfolio = useTradingStore((s) => s.getPortfolioValue())
 
-  const { ticker, ohlcv, isLoading: isMarketLoading } = useMarketData(selectedSymbol)
-  const { rsi, macd, bollinger, sma } = useTechnicalIndicators(ohlcv)
-  const { bids, asks, spread } = useOrderBook(selectedSymbol)
+  const { ticker, ohlcv } = useMarketData(selectedSymbol)
+  const { rsi } = useTechnicalIndicators(ohlcv)
+  const { orderBook } = useOrderBook({ symbol: selectedSymbol, currentPrice: ticker?.price || 0 })
 
   const [chartType, setChartType] = useState<'candles' | 'area'>('candles')
-  const [timeframe, setTimeframe] = useState('1H')
 
   // Stats cards data
   const statsCards = useMemo(() => [
@@ -93,13 +92,8 @@ export function Dashboard() {
     }))
   }, [ohlcv])
 
-  // Transform RSI data
-  const rsiData = useMemo(() => {
-    return rsi.map((value, index) => ({
-      timestamp: ohlcv[index]?.timestamp || Date.now() - (rsi.length - index) * 60000,
-      value,
-    }))
-  }, [rsi, ohlcv])
+  // RSI data is already in the correct format
+  const rsiData = rsi
 
   return (
     <ContentContainer
@@ -110,12 +104,12 @@ export function Dashboard() {
           <Button
             variant="ghost"
             size="sm"
-            icon={<RefreshCw className="w-4 h-4" />}
+            leftIcon={<RefreshCw className="w-4 h-4" />}
             className="text-gray-400"
           >
             Refresh
           </Button>
-          <Badge color="green" pulsing className="flex items-center gap-1">
+          <Badge color="green" className="flex items-center gap-1">
             <Zap className="w-3 h-3" />
             Live
           </Badge>
@@ -181,16 +175,16 @@ export function Dashboard() {
                       <div className="flex items-center gap-2 mt-1">
                         <span className={cn(
                           'text-sm font-medium number-mono',
-                          (ticker.priceChange24h ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          (ticker.change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
                         )}>
-                          {(ticker.priceChange24h ?? 0) >= 0 ? '+' : ''}
-                          {formatCurrency(ticker.priceChange24h ?? 0)}
+                          {(ticker.change ?? 0) >= 0 ? '+' : ''}
+                          {formatCurrency(ticker.change ?? 0)}
                         </span>
                         <span className={cn(
                           'text-sm number-mono',
-                          (ticker.priceChangePercent24h ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          (ticker.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
                         )}>
-                          ({formatPercentage(ticker.priceChangePercent24h ?? 0)})
+                          ({formatPercentage(ticker.changePercent ?? 0)})
                         </span>
                       </div>
                     )}
@@ -266,8 +260,8 @@ export function Dashboard() {
                 </TabsContent>
                 <TabsContent value="depth" className="mt-4">
                   <DepthChart 
-                    bids={bids} 
-                    asks={asks} 
+                    bids={(orderBook?.bids || []).map(b => ({ price: b.price, size: b.quantity, total: b.total }))} 
+                    asks={(orderBook?.asks || []).map(a => ({ price: a.price, size: a.quantity, total: a.total }))} 
                     midPrice={ticker?.price}
                     height={100} 
                   />

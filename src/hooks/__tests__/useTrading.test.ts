@@ -2,7 +2,7 @@
 // TradingHub Pro - Trading Hook Tests
 // ============================================
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useTrading, calculateOrderValue, validateOrder, formatOrderDisplay } from '../useTrading'
 import type { Order } from '@/types'

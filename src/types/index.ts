@@ -60,6 +60,21 @@ export interface Position {
   pnlPercent: number
   allocation: number
   lastUpdated: number
+  // Extended position fields for trading
+  side: 'long' | 'short'
+  entryPrice: number
+  unrealizedPnL: number
+  unrealizedPnLPercent: number
+  leverage: number
+  stopLoss?: number
+  takeProfit?: number
+}
+
+// Order book level for depth chart
+export interface OrderBookLevel {
+  price: number
+  size: number
+  total: number
 }
 
 export interface PortfolioSummary {

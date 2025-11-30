@@ -17,11 +17,11 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useTrading } from '@/hooks/useTrading'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatNumber, cn } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import type { OrderSide, OrderType } from '@/types'
 
 interface OrderPanelProps {
@@ -46,7 +46,7 @@ export function OrderPanel({
   const [takeProfitPrice, setTakeProfitPrice] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const { placeOrder, isPlacingOrder, balance, buyingPower } = useTrading()
+  const { placeOrder, isPlacingOrder, buyingPower } = useTrading()
 
   // Calculate order value
   const orderValue = useMemo(() => {
@@ -120,7 +120,7 @@ export function OrderPanel({
           variant={isBuy ? 'success' : 'ghost'}
           size="lg"
           onClick={() => setSide('buy')}
-          icon={<ArrowUpCircle className="w-5 h-5" />}
+          leftIcon={<ArrowUpCircle className="w-5 h-5" />}
           className={cn(
             'justify-center font-semibold',
             isBuy && 'ring-2 ring-green-500/50'
@@ -132,7 +132,7 @@ export function OrderPanel({
           variant={!isBuy ? 'danger' : 'ghost'}
           size="lg"
           onClick={() => setSide('sell')}
-          icon={<ArrowDownCircle className="w-5 h-5" />}
+          leftIcon={<ArrowDownCircle className="w-5 h-5" />}
           className={cn(
             'justify-center font-semibold',
             !isBuy && 'ring-2 ring-red-500/50'
@@ -143,7 +143,7 @@ export function OrderPanel({
       </div>
 
       {/* Order Type Tabs */}
-      <Tabs value={orderType} onChange={(v) => setOrderType(v as OrderType)} className="mb-4">
+      <Tabs defaultValue="limit" value={orderType} onChange={(v) => setOrderType(v as OrderType)} className="mb-4">
         <TabsList className="w-full">
           <TabsTrigger value="limit" className="flex-1">Limit</TabsTrigger>
           <TabsTrigger value="market" className="flex-1">Market</TabsTrigger>
@@ -309,7 +309,7 @@ export function OrderPanel({
           size="lg"
           fullWidth
           onClick={handleSubmit}
-          loading={isPlacingOrder}
+          isLoading={isPlacingOrder}
           disabled={!quantity || (orderType !== 'market' && !price)}
           className="font-semibold"
         >

@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useAISignals } from '@/hooks/useAISignals'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import type { AISignal } from '@/types'
 
 interface AISignalPanelProps {
@@ -43,7 +43,7 @@ export function AISignalPanel({
 
   // Extract sentiment and confidence from analysis with defaults
   const marketSentiment = analysis?.sentiment ?? 'neutral'
-  const confidenceLevel = analysis?.confidence ?? 50
+  const confidenceLevel = analysis?.sentimentScore ?? 50
 
   // Get the primary signal (highest confidence)
   const primarySignal = useMemo(() => {
@@ -135,7 +135,7 @@ export function AISignalPanel({
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             'p-4 rounded-lg mb-4 border-2',
-            primarySignal.direction === 'long' 
+            primarySignal.direction === 'bullish' 
               ? 'bg-green-500/10 border-green-500/30' 
               : 'bg-red-500/10 border-red-500/30'
           )}
@@ -143,10 +143,10 @@ export function AISignalPanel({
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               <Badge 
-                color={primarySignal.direction === 'long' ? 'green' : 'red'}
+                color={primarySignal.direction === 'bullish' ? 'green' : 'red'}
                 className="flex items-center gap-1"
               >
-                {primarySignal.direction === 'long' ? (
+                {primarySignal.direction === 'bullish' ? (
                   <TrendingUp className="w-3 h-3" />
                 ) : (
                   <TrendingDown className="w-3 h-3" />
@@ -248,14 +248,14 @@ export function AISignalPanel({
 // ============================================
 
 interface SignalRowProps {
-  signal: TradeSignal
+  signal: AISignal
   index: number
   isSelected: boolean
   onClick: () => void
 }
 
 function SignalRow({ signal, index, isSelected, onClick }: SignalRowProps) {
-  const isLong = signal.direction === 'long'
+  const isLong = signal.direction === 'bullish'
   const potentialGain = ((signal.targetPrice - signal.entryPrice) / signal.entryPrice) * 100
   const potentialLoss = ((signal.stopLoss - signal.entryPrice) / signal.entryPrice) * 100
 

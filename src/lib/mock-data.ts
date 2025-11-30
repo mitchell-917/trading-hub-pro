@@ -42,7 +42,7 @@ export const randomInt = (min: number, max: number): number => {
   return Math.floor(randomBetween(min, max + 1))
 }
 
-export const randomChoice = <T>(arr: T[]): T => {
+export const randomChoice = <T>(arr: readonly T[]): T => {
   return arr[randomInt(0, arr.length - 1)]
 }
 
@@ -74,7 +74,7 @@ export const generateOHLCVData = (
 ): OHLCV[] => {
   resetSeed()
   const symbolData = SYMBOLS.find((s) => s.symbol === symbol) || SYMBOLS[0]
-  let currentPrice = symbolData.basePrice
+  let currentPrice: number = symbolData.basePrice
 
   const data: OHLCV[] = []
   const now = Date.now()
@@ -217,6 +217,8 @@ export const generatePositions = (): Position[] => {
     const currentPrice = symbolData.basePrice * randomBetween(0.9, 1.1)
     const pnl = (currentPrice - avgPrice) * quantity
     const pnlPercent = ((currentPrice - avgPrice) / avgPrice) * 100
+    const side = seededRandom() > 0.5 ? 'long' : 'short' as const
+    const leverage = [1, 2, 3, 5, 10][Math.floor(seededRandom() * 5)]
 
     positions.push({
       id: `pos-${index}`,
@@ -229,6 +231,18 @@ export const generatePositions = (): Position[] => {
       pnlPercent: Number(pnlPercent.toFixed(2)),
       allocation: 0, // Will be calculated
       lastUpdated: Date.now(),
+      // Extended position fields
+      side,
+      entryPrice: Number(avgPrice.toFixed(2)),
+      unrealizedPnL: Number(pnl.toFixed(2)),
+      unrealizedPnLPercent: Number(pnlPercent.toFixed(2)),
+      leverage,
+      stopLoss: side === 'long' 
+        ? Number((avgPrice * 0.95).toFixed(2)) 
+        : Number((avgPrice * 1.05).toFixed(2)),
+      takeProfit: side === 'long'
+        ? Number((avgPrice * 1.10).toFixed(2))
+        : Number((avgPrice * 0.90).toFixed(2)),
     })
   })
 

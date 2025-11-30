@@ -237,7 +237,7 @@ export function getMACDSignal(
 export function getBollingerBandsSignal(
   price: number,
   upper: number,
-  middle: number,
+  _middle: number,
   lower: number
 ): {
   signal: 'overbought' | 'oversold' | 'neutral'

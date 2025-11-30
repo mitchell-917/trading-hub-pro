@@ -32,7 +32,10 @@ interface UseTradingReturn {
     updates: Partial<Pick<Order, 'quantity' | 'price' | 'stopPrice'>>
   ) => Promise<{ success: boolean; error?: string }>
   isSubmitting: boolean
+  isPlacingOrder: boolean
   lastError: string | null
+  balance: number
+  buyingPower: number
 }
 
 /**
@@ -168,7 +171,10 @@ export function useTrading(): UseTradingReturn {
     cancelOrder,
     modifyOrder,
     isSubmitting,
+    isPlacingOrder: isSubmitting,
     lastError,
+    balance: 50000, // Mock balance
+    buyingPower: 100000, // Mock buying power (with margin)
   }
 }
 

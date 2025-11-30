@@ -3,7 +3,7 @@
 // ============================================
 
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { OrderPanel } from '../OrderPanel'
 import { PositionManager } from '../PositionManager'
 import { Watchlist } from '../Watchlist'
@@ -18,7 +18,10 @@ beforeEach(() => {
   useTradingStore.setState({
     positions: [],
     orders: [],
-    watchlist: ['BTCUSD', 'ETHUSD'],
+    watchlist: [
+      { symbol: 'BTCUSD', name: 'Bitcoin', addedAt: Date.now() },
+      { symbol: 'ETHUSD', name: 'Ethereum', addedAt: Date.now() },
+    ],
     selectedSymbol: 'BTCUSD',
   })
 })
@@ -83,16 +86,19 @@ describe('PositionManager', () => {
         {
           id: '1',
           symbol: 'BTCUSD',
+          name: 'Bitcoin',
           side: 'long',
           quantity: 1,
+          averagePrice: 50000,
           entryPrice: 50000,
           currentPrice: 52000,
+          pnl: 2000,
+          pnlPercent: 4,
           unrealizedPnL: 2000,
           unrealizedPnLPercent: 4,
           leverage: 1,
-          margin: 50000,
-          liquidationPrice: 40000,
-          openedAt: Date.now(),
+          allocation: 100,
+          lastUpdated: Date.now(),
         },
       ],
     })
@@ -108,16 +114,19 @@ describe('PositionManager', () => {
         {
           id: '1',
           symbol: 'BTCUSD',
+          name: 'Bitcoin',
           side: 'long',
           quantity: 1,
+          averagePrice: 50000,
           entryPrice: 50000,
           currentPrice: 52000,
+          pnl: 2000,
+          pnlPercent: 4,
           unrealizedPnL: 2000,
           unrealizedPnLPercent: 4,
           leverage: 1,
-          margin: 50000,
-          liquidationPrice: 40000,
-          openedAt: Date.now(),
+          allocation: 100,
+          lastUpdated: Date.now(),
         },
       ],
     })
@@ -132,16 +141,19 @@ describe('PositionManager', () => {
         {
           id: '1',
           symbol: 'BTCUSD',
+          name: 'Bitcoin',
           side: 'long',
           quantity: 1,
+          averagePrice: 50000,
           entryPrice: 50000,
           currentPrice: 52000,
+          pnl: 2000,
+          pnlPercent: 4,
           unrealizedPnL: 2000,
           unrealizedPnLPercent: 4,
           leverage: 1,
-          margin: 50000,
-          liquidationPrice: 40000,
-          openedAt: Date.now(),
+          allocation: 100,
+          lastUpdated: Date.now(),
         },
       ],
     })
@@ -211,8 +223,8 @@ describe('TradeHistory', () => {
           quantity: 1,
           price: 50000,
           status: 'filled',
-          filledPrice: 50000,
           filledQuantity: 1,
+          timeInForce: 'gtc',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },
@@ -235,8 +247,8 @@ describe('TradeHistory', () => {
           quantity: 1,
           price: 50000,
           status: 'filled',
-          filledPrice: 50000,
           filledQuantity: 1,
+          timeInForce: 'gtc',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },
@@ -260,8 +272,8 @@ describe('TradeHistory', () => {
           quantity: 1,
           price: 50000,
           status: 'filled',
-          filledPrice: 50000,
           filledQuantity: 1,
+          timeInForce: 'gtc',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },

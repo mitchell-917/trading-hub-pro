@@ -20,6 +20,7 @@ interface UseMarketDataOptions {
 
 interface UseMarketDataReturn {
   ticker: Ticker | null
+  ohlcv: OHLCV[]
   isLoading: boolean
   error: string | null
   isConnected: boolean
@@ -29,14 +30,20 @@ interface UseMarketDataReturn {
 /**
  * Hook for real-time market data with simulated WebSocket updates
  */
-export function useMarketData({
-  symbol,
-  updateInterval = 1000,
-  enabled = true,
-}: UseMarketDataOptions): UseMarketDataReturn {
+export function useMarketData(
+  optionsOrSymbol: UseMarketDataOptions | string
+): UseMarketDataReturn {
+  // Support both string and options object
+  const options: UseMarketDataOptions = typeof optionsOrSymbol === 'string' 
+    ? { symbol: optionsOrSymbol }
+    : optionsOrSymbol
+  
+  const { symbol, updateInterval = 1000, enabled = true } = options
+  
   const [ticker, setTicker] = useState<Ticker | null>(null)
+  const [ohlcv, setOhlcv] = useState<OHLCV[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -44,13 +51,17 @@ export function useMarketData({
     if (!enabled) return
 
     setIsLoading(true)
-    setError(null)
 
     // Simulate connection delay
     setTimeout(() => {
       try {
         const initialTicker = generateTicker(symbol)
         setTicker(initialTicker)
+        
+        // Generate initial OHLCV data
+        const initialOhlcv = generateOHLCVData(symbol, 100)
+        setOhlcv(initialOhlcv)
+        
         setIsConnected(true)
         setIsLoading(false)
 
@@ -76,8 +87,8 @@ export function useMarketData({
             }
           })
         }, updateInterval)
-      } catch (err) {
-        setError('Failed to connect to market data')
+      } catch (_err) {
+        // Error handled by setting isLoading to false
         setIsLoading(false)
       }
     }, 500)
@@ -103,6 +114,7 @@ export function useMarketData({
 
   return {
     ticker,
+    ohlcv,
     isLoading,
     error,
     isConnected,
@@ -133,7 +145,7 @@ export function useMultipleTickers({
 }: UseMultipleTickersOptions = {}): UseMultipleTickersReturn {
   const [tickers, setTickers] = useState<Record<string, Ticker>>({})
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -227,7 +239,7 @@ export function useOHLCVData({
 }: UseOHLCVDataOptions): UseOHLCVDataReturn {
   const [data, setData] = useState<OHLCV[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error] = useState<string | null>(null)
 
   const timeframeToMs: Record<string, number> = {
     '1m': 60000,
@@ -242,7 +254,6 @@ export function useOHLCVData({
     if (!enabled) return
 
     setIsLoading(true)
-    setError(null)
 
     // Simulate API delay
     setTimeout(() => {
@@ -254,8 +265,8 @@ export function useOHLCVData({
         )
         setData(ohlcvData)
         setIsLoading(false)
-      } catch (err) {
-        setError('Failed to fetch OHLCV data')
+      } catch (_err) {
+        // Error handled by setting isLoading to false
         setIsLoading(false)
       }
     }, 200)

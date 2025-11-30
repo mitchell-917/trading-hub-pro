@@ -116,12 +116,12 @@ describe('PriceChange', () => {
 
 describe('RSIChart', () => {
   const mockRSIData = [
-    { timestamp: Date.now() - 300000, value: 45 },
-    { timestamp: Date.now() - 240000, value: 52 },
-    { timestamp: Date.now() - 180000, value: 68 },
-    { timestamp: Date.now() - 120000, value: 75 },
-    { timestamp: Date.now() - 60000, value: 72 },
-    { timestamp: Date.now(), value: 65 },
+    { timestamp: Date.now() - 300000, value: 45, overbought: false, oversold: false },
+    { timestamp: Date.now() - 240000, value: 52, overbought: false, oversold: false },
+    { timestamp: Date.now() - 180000, value: 68, overbought: false, oversold: false },
+    { timestamp: Date.now() - 120000, value: 75, overbought: true, oversold: false },
+    { timestamp: Date.now() - 60000, value: 72, overbought: true, oversold: false },
+    { timestamp: Date.now(), value: 65, overbought: false, oversold: false },
   ]
 
   it('renders with data', () => {

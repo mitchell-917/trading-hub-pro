@@ -3,7 +3,8 @@
 // Premium input with validation states
 // ============================================
 
-import { forwardRef, InputHTMLAttributes, useState } from 'react'
+import { forwardRef, useState } from 'react'
+import type { InputHTMLAttributes } from 'react'
 import { Eye, EyeOff, AlertCircle, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -64,8 +65,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'transition-all duration-200',
               'focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              leftIcon && 'pl-10',
-              (rightIcon || isPassword) && 'pr-10',
+              Boolean(leftIcon) && 'pl-10',
+              Boolean(rightIcon || isPassword) && 'pr-10',
               hasError && 'border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50',
               hasSuccess && 'border-emerald-500/50 focus:ring-emerald-500/50 focus:border-emerald-500/50',
               className
@@ -127,7 +128,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = 'Input'
 
 // Number Input with increment/decrement
-interface NumberInputProps extends Omit<InputProps, 'type'> {
+interface NumberInputProps extends Omit<InputProps, 'type' | 'onChange' | 'value'> {
   value: number
   onChange: (value: number) => void
   min?: number

@@ -3,7 +3,8 @@
 // Status badges and labels
 // ============================================
 
-import { forwardRef, HTMLAttributes } from 'react'
+import { forwardRef } from 'react'
+import type { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'

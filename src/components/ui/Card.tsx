@@ -3,8 +3,10 @@
 // Glassmorphism card with hover effects
 // ============================================
 
-import { forwardRef, HTMLAttributes } from 'react'
-import { motion, HTMLMotionProps } from 'framer-motion'
+import { forwardRef } from 'react'
+import type { HTMLAttributes } from 'react'
+import { motion } from 'framer-motion'
+import type { HTMLMotionProps } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onAnimationStart' | 'onDrag' | 'onDragEnd' | 'onDragStart'> {
