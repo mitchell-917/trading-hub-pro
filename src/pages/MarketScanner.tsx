@@ -29,7 +29,8 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatCompact, cn } from '@/lib/utils'
+import { formatCompact, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 
 // Scanner preset types
 type ScannerPreset = 'top-gainers' | 'top-losers' | 'high-volume' | 'unusual-activity' | 'breakouts' | 'oversold' | 'overbought'
@@ -89,6 +90,7 @@ export function MarketScanner() {
   
   const tickers = useTradingStore((s) => s.tickers)
   const addToWatchlist = useTradingStore((s) => s.addToWatchlist)
+  const { formatPrice } = useCurrency()
 
   // Apply filters and sorting
   const filteredTickers = useMemo(() => {
@@ -447,7 +449,7 @@ export function MarketScanner() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <p className="font-mono font-medium">{formatCurrency(ticker.price)}</p>
+                          <p className="font-mono font-medium">{formatPrice(ticker.price)}</p>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
