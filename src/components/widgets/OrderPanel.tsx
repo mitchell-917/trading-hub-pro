@@ -78,20 +78,20 @@ export function OrderPanel({
     if (!symbol || !quantity) return
 
     const orderPrice = orderType === 'market' ? currentPrice : parseFloat(price)
-    if (!orderPrice) return
+    if (!orderPrice || orderPrice <= 0) return
 
     const orderParams = {
       symbol,
       side,
       type: orderType,
       quantity: parseFloat(quantity),
-      price: orderType === 'market' ? undefined : orderPrice,
+      price: orderPrice, // Always pass price for proper order value calculation
       stopPrice: stopPrice ? parseFloat(stopPrice) : undefined,
       takeProfitPrice: takeProfitPrice ? parseFloat(takeProfitPrice) : undefined,
     }
 
     const result = await placeOrder(orderParams as Parameters<typeof placeOrder>[0])
-    if (result) {
+    if (result.success) {
       setQuantity('')
       setPrice('')
       setStopPrice('')
