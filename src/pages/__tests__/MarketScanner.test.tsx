@@ -3,7 +3,7 @@
 // ============================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { MarketScanner } from '../MarketScanner'
 

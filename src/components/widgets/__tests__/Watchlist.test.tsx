@@ -3,7 +3,7 @@
 // ============================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen } from '@/test/test-utils'
 import { Watchlist } from '../Watchlist'
 
 // Mock the useMarketData hook

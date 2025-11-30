@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { CurrencyProvider } from '@/context/CurrencyContext'
 
 // Create a new QueryClient for each test
 const createTestQueryClient = () =>
@@ -22,7 +23,9 @@ function AllProviders({ children }: AllProvidersProps) {
 
   return (
     <QueryClientProvider client={testQueryClient}>
-      {children}
+      <CurrencyProvider defaultCurrency="USD" autoDetect={false}>
+        {children}
+      </CurrencyProvider>
     </QueryClientProvider>
   )
 }
