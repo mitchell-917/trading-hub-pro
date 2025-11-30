@@ -71,3 +71,15 @@ export {
   useMarketNews,
   usePortfolioNews,
 } from './useNews'
+export {
+  useCalendarEvents,
+  useTodayEvents,
+  useHighImpactEvents,
+  useEventsByCountry,
+  useEventsByCategory,
+  useEventDetails,
+  useCalendarCountries,
+  useCalendarCategories,
+  useUpcomingEvents,
+  useWeekCalendar,
+} from './useCalendar'
