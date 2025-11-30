@@ -3,7 +3,7 @@
 // Main trading dashboard view
 // ============================================
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   TrendingUp,
@@ -46,21 +46,23 @@ export function Dashboard() {
   const selectedSymbol = useTradingStore((s) => s.selectedSymbol)
   const setSelectedSymbol = useTradingStore((s) => s.setSelectedSymbol)
   const positions = useTradingStore((s) => s.positions)
+  const cashBalance = useTradingStore((s) => s.cashBalance)
+  const updatePositionPrices = useTradingStore((s) => s.updatePositionPrices)
   const { formatPrice } = useCurrency()
 
   // Compute portfolio values with useMemo to avoid infinite loops
   const portfolio = useMemo(() => {
-    const totalValue = positions.reduce(
+    const positionsValue = positions.reduce(
       (sum, p) => sum + p.quantity * p.currentPrice,
       0
     )
     const unrealizedPnL = positions.reduce(
-      (sum, p) => sum + p.unrealizedPnL,
+      (sum, p) => sum + (p.unrealizedPnL || 0),
       0
     )
-    const dailyPnL = unrealizedPnL * 0.3
+    const totalValue = positionsValue + cashBalance
+    const dailyPnL = unrealizedPnL
     const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
-    const buyingPower = 100000 - totalValue
 
     return {
       totalValue,
@@ -68,13 +70,20 @@ export function Dashboard() {
       dailyPnLPercent,
       unrealizedPnL,
       positionsCount: positions.length,
-      buyingPower,
+      buyingPower: cashBalance,
     }
-  }, [positions])
+  }, [positions, cashBalance])
 
-  const { ticker, ohlcv } = useMarketData(selectedSymbol)
+  const { ticker, ohlcv, isLoading, isConnected } = useMarketData(selectedSymbol)
   const { rsi } = useTechnicalIndicators(ohlcv)
   const { orderBook } = useOrderBook({ symbol: selectedSymbol, currentPrice: ticker?.price || 0 })
+
+  // Update position prices when ticker updates
+  useEffect(() => {
+    if (ticker && positions.length > 0) {
+      updatePositionPrices({ [ticker.symbol]: ticker.price })
+    }
+  }, [ticker, positions.length, updatePositionPrices])
 
   const [chartType, setChartType] = useState<'candles' | 'area'>('candles')
 
@@ -88,23 +97,23 @@ export function Dashboard() {
       color: 'indigo',
     },
     {
-      title: "Today's P&L",
-      value: formatPrice(portfolio.dailyPnL),
+      title: 'Unrealized P&L',
+      value: formatPrice(portfolio.unrealizedPnL),
       change: portfolio.dailyPnLPercent,
-      icon: portfolio.dailyPnL >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />,
-      color: portfolio.dailyPnL >= 0 ? 'green' : 'red',
+      icon: portfolio.unrealizedPnL >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />,
+      color: portfolio.unrealizedPnL >= 0 ? 'green' : 'red',
     },
     {
       title: 'Open Positions',
       value: portfolio.positionsCount.toString(),
-      subtext: `${formatPrice(portfolio.unrealizedPnL)} unrealized`,
+      subtext: portfolio.positionsCount > 0 ? `${formatPrice(portfolio.unrealizedPnL)} unrealized` : 'No open positions',
       icon: <Activity className="w-5 h-5" />,
       color: 'purple',
     },
     {
-      title: 'Win Rate',
-      value: '68.5%',
-      subtext: 'Last 30 days',
+      title: 'Buying Power',
+      value: formatPrice(portfolio.buyingPower),
+      subtext: 'Available to trade',
       icon: <Percent className="w-5 h-5" />,
       color: 'blue',
     },
@@ -135,10 +144,20 @@ export function Dashboard() {
           >
             Refresh
           </Button>
-          <Badge color="green" className="flex items-center gap-1">
-            <Zap className="w-3 h-3" />
-            Live
-          </Badge>
+          {isLoading ? (
+            <Badge color="yellow" className="flex items-center gap-1">
+              Loading...
+            </Badge>
+          ) : isConnected ? (
+            <Badge color="green" className="flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              Live
+            </Badge>
+          ) : (
+            <Badge color="gray" className="flex items-center gap-1">
+              Disconnected
+            </Badge>
+          )}
         </div>
       }
     >
