@@ -1,16 +1,17 @@
 // ============================================
 // TradingHub Pro - Market Data Hook
-// Real-time market data simulation with WebSocket-like updates
+// Real-time market data from Binance API
 // ============================================
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Ticker, OHLCV } from '@/types'
+import { binanceClient } from '@/services/api/binance'
 import {
-  generateTicker,
-  generateOHLCVData,
-  SYMBOLS,
-  randomBetween,
-} from '@/lib/mock-data'
+  binanceWebSocket,
+  type WebSocketTickerData,
+} from '@/services/api/websocket'
+import { CRYPTO_MAPPINGS, type CryptoSymbol } from '@/services/api/config'
 
 interface UseMarketDataOptions {
   symbol: string
@@ -27,8 +28,13 @@ interface UseMarketDataReturn {
   reconnect: () => void
 }
 
+// Check if a symbol is a valid crypto symbol
+function isCryptoSymbol(symbol: string): symbol is CryptoSymbol {
+  return symbol in CRYPTO_MAPPINGS
+}
+
 /**
- * Hook for real-time market data with simulated WebSocket updates
+ * Hook for real-time market data from Binance
  */
 export function useMarketData(
   optionsOrSymbol: UseMarketDataOptions | string
@@ -38,93 +44,96 @@ export function useMarketData(
     ? { symbol: optionsOrSymbol }
     : optionsOrSymbol
   
-  const { symbol, updateInterval = 1000, enabled = true } = options
+  const { symbol, enabled = true } = options
+  const queryClient = useQueryClient()
   
-  const [ticker, setTicker] = useState<Ticker | null>(null)
-  const [ohlcv, setOhlcv] = useState<OHLCV[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const reconnectTrigger = useRef(0)
+  const [realtimeTicker, setRealtimeTicker] = useState<Ticker | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
+  
+  // Check if it's a crypto symbol we support
+  const isValidSymbol = isCryptoSymbol(symbol)
 
-  const reconnect = useCallback(() => {
-    // Will be set after connection is established
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-    setIsConnected(false)
-    // Trigger re-connection via useEffect by updating ref and forcing re-render
-    reconnectTrigger.current += 1
-    setIsLoading(true)
-  }, [])
+  // Fetch ticker data from Binance
+  const {
+    data: initialTicker,
+    isLoading: isTickerLoading,
+    error: tickerError,
+    refetch: refetchTicker,
+  } = useQuery({
+    queryKey: ['binance-ticker', symbol],
+    queryFn: () => binanceClient.getTicker(symbol as CryptoSymbol),
+    enabled: enabled && isValidSymbol,
+    staleTime: 5000,
+    refetchInterval: 10000, // Fallback refetch every 10s if WebSocket fails
+  })
 
+  // Fetch OHLCV data from Binance
+  const {
+    data: ohlcvData,
+    isLoading: isOhlcvLoading,
+    error: ohlcvError,
+  } = useQuery({
+    queryKey: ['binance-ohlcv', symbol],
+    queryFn: () => binanceClient.getOHLCV(symbol as CryptoSymbol, '1h', 100),
+    enabled: enabled && isValidSymbol,
+    staleTime: 60000,
+    refetchInterval: 60000, // Refetch every minute
+  })
+
+  // WebSocket subscription for real-time ticker updates
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || !isValidSymbol) {
+      return
+    }
 
-    let isMounted = true
-
-    // Simulate connection delay
-    const initTimeout = setTimeout(() => {
-      try {
-        const initialTicker = generateTicker(symbol)
-        const initialOhlcv = generateOHLCVData(symbol, 100)
-        
-        if (isMounted) {
-          setTicker(initialTicker)
-          setOhlcv(initialOhlcv)
-          setIsConnected(true)
-          setIsLoading(false)
-        }
-
-        // Start price updates
-        intervalRef.current = setInterval(() => {
-          if (!isMounted) return
-          setTicker((prev) => {
-            if (!prev) return prev
-
-            // Simulate price movement
-            const priceChange = prev.price * randomBetween(-0.002, 0.002)
-            const newPrice = Number((prev.price + priceChange).toFixed(2))
-            const change = newPrice - (prev.price - prev.change)
-            const changePercent = (change / (prev.price - prev.change)) * 100
-
-            return {
-              ...prev,
-              price: newPrice,
-              change: Number(change.toFixed(2)),
-              changePercent: Number(changePercent.toFixed(2)),
-              high24h: Math.max(prev.high24h, newPrice),
-              low24h: Math.min(prev.low24h, newPrice),
-              lastUpdated: Date.now(),
-            }
-          })
-        }, updateInterval)
-      } catch {
-        // Error handled by setting isLoading to false
-        if (isMounted) {
-          setIsLoading(false)
-        }
+    // Subscribe to ticker updates
+    unsubscribeRef.current = binanceWebSocket.subscribeTicker(
+      symbol as CryptoSymbol,
+      (data: WebSocketTickerData) => {
+        setRealtimeTicker({
+          symbol: data.symbol,
+          name: CRYPTO_MAPPINGS[symbol as CryptoSymbol]?.name || symbol,
+          price: data.price,
+          change: data.priceChange,
+          changePercent: data.priceChangePercent,
+          volume: data.volume,
+          high24h: data.high24h,
+          low24h: data.low24h,
+          lastUpdated: data.timestamp,
+        })
+        setIsConnected(true)
       }
-    }, 500)
+    )
 
     return () => {
-      isMounted = false
-      clearTimeout(initTimeout)
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
       }
       setIsConnected(false)
     }
-  }, [symbol, updateInterval, enabled])
+  }, [symbol, enabled, isValidSymbol])
+
+  const reconnect = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current()
+      unsubscribeRef.current = null
+    }
+    setIsConnected(false)
+    refetchTicker()
+    queryClient.invalidateQueries({ queryKey: ['binance-ohlcv', symbol] })
+  }, [refetchTicker, queryClient, symbol])
+
+  // Combine errors
+  const error = tickerError || ohlcvError
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null
 
   return {
-    ticker,
-    ohlcv,
-    isLoading,
-    error,
+    ticker: realtimeTicker || initialTicker || null,
+    ohlcv: ohlcvData || [],
+    isLoading: isTickerLoading || isOhlcvLoading,
+    error: errorMessage,
     isConnected,
     reconnect,
   }
@@ -143,86 +152,83 @@ interface UseMultipleTickersReturn {
   isConnected: boolean
 }
 
+// Default crypto symbols
+const DEFAULT_CRYPTO_SYMBOLS: CryptoSymbol[] = ['BTC', 'ETH', 'SOL', 'XRP', 'ADA']
+
 /**
- * Hook for tracking multiple tickers simultaneously
+ * Hook for tracking multiple tickers simultaneously from Binance
  */
 export function useMultipleTickers({
-  symbols = SYMBOLS.map((s) => s.symbol),
-  updateInterval = 1500,
+  symbols = DEFAULT_CRYPTO_SYMBOLS,
   enabled = true,
 }: UseMultipleTickersOptions = {}): UseMultipleTickersReturn {
   const [tickers, setTickers] = useState<Record<string, Ticker>>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [error] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
 
-  useEffect(() => {
-    if (!enabled) return
+  // Filter to valid crypto symbols only
+  const validSymbols = symbols.filter(isCryptoSymbol) as CryptoSymbol[]
 
-    let isMounted = true
-
-    // Initialize tickers
-    const initTimeout = setTimeout(() => {
-      if (!isMounted) return
-      
-      const initialTickers: Record<string, Ticker> = {}
-      symbols.forEach((symbol) => {
-        initialTickers[symbol] = generateTicker(symbol)
-      })
-      setTickers(initialTickers)
-      setIsConnected(true)
-      setIsLoading(false)
-
-      // Start price updates
-      intervalRef.current = setInterval(() => {
-        if (!isMounted) return
-        setTickers((prev) => {
-          const updated = { ...prev }
-          
-          // Update random subset of tickers
-          const updateCount = Math.ceil(symbols.length / 3)
-          const shuffled = [...symbols].sort(() => Math.random() - 0.5)
-          const toUpdate = shuffled.slice(0, updateCount)
-
-          toUpdate.forEach((symbol) => {
-            const ticker = updated[symbol]
-            if (!ticker) return
-
-            const priceChange = ticker.price * randomBetween(-0.003, 0.003)
-            const newPrice = Number((ticker.price + priceChange).toFixed(2))
-            const change = newPrice - (ticker.price - ticker.change)
-            const changePercent = (change / (ticker.price - ticker.change)) * 100
-
-            updated[symbol] = {
-              ...ticker,
-              price: newPrice,
-              change: Number(change.toFixed(2)),
-              changePercent: Number(changePercent.toFixed(2)),
-              high24h: Math.max(ticker.high24h, newPrice),
-              low24h: Math.min(ticker.low24h, newPrice),
-              lastUpdated: Date.now(),
-            }
-          })
-
-          return updated
-        })
-      }, updateInterval)
-    }, 300)
-
-    return () => {
-      isMounted = false
-      clearTimeout(initTimeout)
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
-  }, [symbols, updateInterval, enabled])
-
-  return {
-    tickers,
+  // Fetch initial data
+  const {
+    data: initialTickers,
     isLoading,
     error,
+  } = useQuery({
+    queryKey: ['binance-tickers', validSymbols.join(',')],
+    queryFn: () => binanceClient.getMultipleTickers(validSymbols),
+    enabled: enabled && validSymbols.length > 0,
+    staleTime: 5000,
+    refetchInterval: 10000,
+  })
+
+  // WebSocket subscription
+  useEffect(() => {
+    if (!enabled || validSymbols.length === 0) {
+      return
+    }
+
+    unsubscribeRef.current = binanceWebSocket.subscribeMultipleTickers(
+      validSymbols,
+      (data) => {
+        setTickers((prev) => {
+          const updated = { ...prev }
+          for (const [symbol, tickerData] of Object.entries(data)) {
+            updated[symbol] = {
+              symbol,
+              name: CRYPTO_MAPPINGS[symbol as CryptoSymbol]?.name || symbol,
+              price: tickerData.price,
+              change: tickerData.priceChange,
+              changePercent: tickerData.priceChangePercent,
+              volume: tickerData.volume,
+              high24h: tickerData.high24h,
+              low24h: tickerData.low24h,
+              lastUpdated: tickerData.timestamp,
+            }
+          }
+          return updated
+        })
+        setIsConnected(true)
+      }
+    )
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
+      }
+      setIsConnected(false)
+    }
+  }, [validSymbols, enabled])
+
+  // Merge initial tickers with real-time updates
+  const mergedTickers = { ...initialTickers, ...tickers }
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null
+
+  return {
+    tickers: mergedTickers,
+    isLoading,
+    error: errorMessage,
     isConnected,
   }
 }
@@ -242,72 +248,39 @@ interface UseOHLCVDataReturn {
 }
 
 /**
- * Hook for fetching OHLCV (candlestick) data
+ * Hook for fetching OHLCV (candlestick) data from Binance
  */
-// Timeframe to milliseconds mapping - defined outside to avoid recreating
-const TIMEFRAME_TO_MS: Record<string, number> = {
-  '1m': 60000,
-  '5m': 300000,
-  '15m': 900000,
-  '1h': 3600000,
-  '4h': 14400000,
-  '1d': 86400000,
-}
-
 export function useOHLCVData({
   symbol,
   timeframe = '1h',
   count = 100,
   enabled = true,
 }: UseOHLCVDataOptions): UseOHLCVDataReturn {
-  const [data, setData] = useState<OHLCV[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error] = useState<string | null>(null)
-  const [refetchCounter, setRefetchCounter] = useState(0)
+  const queryClient = useQueryClient()
+  const isValidSymbol = isCryptoSymbol(symbol)
 
-  const refetch = useCallback(() => {
-    setRefetchCounter((c) => c + 1)
-  }, [])
-
-  useEffect(() => {
-    if (!enabled) return
-
-    let isMounted = true
-
-    // Simulate API delay - use setTimeout callback for state updates
-    const timeout = setTimeout(() => {
-      if (isMounted) {
-        setIsLoading(true)
-      }
-      
-      try {
-        const ohlcvData = generateOHLCVData(
-          symbol,
-          count,
-          TIMEFRAME_TO_MS[timeframe]
-        )
-        if (isMounted) {
-          setData(ohlcvData)
-          setIsLoading(false)
-        }
-      } catch {
-        // Error handled by setting isLoading to false
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }, 200)
-
-    return () => {
-      isMounted = false
-      clearTimeout(timeout)
-    }
-  }, [symbol, timeframe, count, enabled, refetchCounter])
-
-  return {
+  const {
     data,
     isLoading,
     error,
+  } = useQuery({
+    queryKey: ['binance-ohlcv', symbol, timeframe, count],
+    queryFn: () => binanceClient.getOHLCV(symbol as CryptoSymbol, timeframe, count),
+    enabled: enabled && isValidSymbol,
+    staleTime: 60000,
+    refetchInterval: 60000,
+  })
+
+  const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['binance-ohlcv', symbol, timeframe, count] })
+  }, [queryClient, symbol, timeframe, count])
+
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null
+
+  return {
+    data: data || [],
+    isLoading,
+    error: errorMessage,
     refetch,
   }
 }
