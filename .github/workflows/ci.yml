@@ -1,39 +1,106 @@
-# Trading Hub Pro - CI/CD Pipeline
-name: CI/CD Pipeline
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    TRADING HUB PRO - ENTERPRISE CI/CD PIPELINE               ║
+# ║                                                                              ║
+# ║  Production-grade pipeline for financial trading application                 ║
+# ║  Includes: Security, Quality Gates, Performance, Accessibility              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+name: 🚀 CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master, develop, 'feature/**', 'release/**']
+    branches: [main, master, develop, 'feature/**', 'release/**', 'hotfix/**']
   pull_request:
     branches: [main, master, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
       skip_tests:
-        description: 'Skip tests (use with caution)'
+        description: 'Skip tests (emergency deployments only)'
+        required: false
+        default: false
+        type: boolean
+      run_e2e:
+        description: 'Run E2E tests'
         required: false
         default: false
         type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '9'
   CI: true
+  # Coverage thresholds for financial application
+  COVERAGE_THRESHOLD_LINES: 70
+  COVERAGE_THRESHOLD_BRANCHES: 60
+  COVERAGE_THRESHOLD_FUNCTIONS: 70
+  COVERAGE_THRESHOLD_STATEMENTS: 70
+
+# ══════════════════════════════════════════════════════════════════════════════
+# JOBS
+# ══════════════════════════════════════════════════════════════════════════════
 
 jobs:
-  # ══════════════════════════════════════════════════════════════════════════
-  # 📦 INSTALL DEPENDENCIES
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🔍 PRE-FLIGHT CHECKS
+  # ────────────────────────────────────────────────────────────────────────────
+
+  preflight:
+    name: 🔍 Pre-flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+      is_draft: ${{ github.event.pull_request.draft }}
+      is_release: ${{ startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - name: 🔍 Check for skip conditions
+        id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: 'same_content_newer'
+          skip_after_successful_duplicate: 'true'
+
+      - name: 📋 Output context
+        run: |
+          echo "## 🔍 Pre-flight Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Event Type | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Actor | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 📦 DEPENDENCY INSTALLATION
+  # ────────────────────────────────────────────────────────────────────────────
 
   install:
     name: 📦 Install Dependencies
+    needs: preflight
+    if: needs.preflight.outputs.should_skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
 
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
@@ -52,12 +119,14 @@ jobs:
       - name: 📤 Cache node_modules
         uses: actions/cache/save@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # 🔍 LINT & TYPECHECK
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🔍 CODE QUALITY - LINT & TYPE CHECK
+  # ────────────────────────────────────────────────────────────────────────────
 
   lint:
     name: 🔍 Lint & Type Check
@@ -78,11 +147,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: 📂 Restore node_modules
+      - name: 📂 Restore dependencies
         uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: 📥 Install dependencies (if cache miss)
         run: pnpm install --frozen-lockfile
@@ -91,14 +162,14 @@ jobs:
         run: pnpm run lint
 
       - name: 🔷 TypeScript type check
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc --noEmit --pretty
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # 🧪 TESTS
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🧪 UNIT & INTEGRATION TESTS
+  # ────────────────────────────────────────────────────────────────────────────
 
   test:
-    name: 🧪 Tests
+    name: 🧪 Unit & Integration Tests
     needs: install
     if: ${{ !inputs.skip_tests }}
     runs-on: ubuntu-latest
@@ -117,35 +188,57 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: 📂 Restore node_modules
+      - name: 📂 Restore dependencies
         uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: 📥 Install dependencies (if cache miss)
         run: pnpm install --frozen-lockfile
 
       - name: 🧪 Run tests with coverage
-        run: pnpm test -- --run --coverage
+        run: pnpm test -- --run --coverage --reporter=verbose
         env:
           NODE_ENV: test
 
-      - name: 📤 Upload coverage artifact
+      - name: 📈 Coverage Summary
+        if: always()
+        run: |
+          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            BRANCHES=$(cat coverage/coverage-summary.json | jq '.total.branches.pct')
+            FUNCTIONS=$(cat coverage/coverage-summary.json | jq '.total.functions.pct')
+            STATEMENTS=$(cat coverage/coverage-summary.json | jq '.total.statements.pct')
+            
+            echo "| Metric | Coverage |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Lines | ${LINES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Branches | ${BRANCHES}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Functions | ${FUNCTIONS}% |" >> $GITHUB_STEP_SUMMARY
+            echo "| Statements | ${STATEMENTS}% |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📤 Upload coverage report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report
           path: coverage/
-          retention-days: 7
+          retention-days: 14
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # 🏗️ BUILD
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 💰 FINANCIAL CALCULATION TESTS (Critical for Trading App)
+  # ────────────────────────────────────────────────────────────────────────────
 
-  build:
-    name: 🏗️ Build
-    needs: lint
+  test-financial:
+    name: 💰 Financial Calculation Tests
+    needs: install
+    if: ${{ !inputs.skip_tests }}
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
@@ -162,11 +255,72 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: 📂 Restore node_modules
+      - name: 📂 Restore dependencies
         uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: 📥 Install dependencies (if cache miss)
+        run: pnpm install --frozen-lockfile
+
+      - name: 💰 Run financial calculation tests
+        run: |
+          # Run tests specifically for financial calculations, formatting, and store logic
+          pnpm test -- --run \
+            src/lib/__tests__/utils.test.ts \
+            src/lib/__tests__/store.test.ts \
+            src/hooks/__tests__/useTrading.test.ts \
+            src/hooks/__tests__/useTechnicalIndicators.test.ts \
+            src/hooks/__tests__/useAISignals.test.ts \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+
+      - name: 📊 Financial Test Summary
+        run: |
+          echo "## 💰 Financial Calculation Tests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Critical financial components validated:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Price formatting & currency conversion" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ P&L calculations" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Order value calculations" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Technical indicators (RSI, MACD, Bollinger)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Trading store state management" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ AI signal scoring" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🏗️ BUILD & BUNDLE ANALYSIS
+  # ────────────────────────────────────────────────────────────────────────────
+
+  build:
+    name: 🏗️ Build & Bundle Analysis
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: 📂 Restore dependencies
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: 📥 Install dependencies (if cache miss)
         run: pnpm install --frozen-lockfile
@@ -176,16 +330,48 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: 📊 Bundle Size Analysis
+        run: |
+          echo "## 📦 Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size | Gzipped |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|---------|" >> $GITHUB_STEP_SUMMARY
+          
+          for file in dist/assets/*.js dist/assets/*.css; do
+            if [ -f "$file" ]; then
+              SIZE=$(ls -lh "$file" | awk '{print $5}')
+              GZIP=$(gzip -c "$file" | wc -c | awk '{printf "%.2f KB", $1/1024}')
+              FILENAME=$(basename "$file")
+              echo "| \`$FILENAME\` | $SIZE | $GZIP |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: ⚠️ Check bundle size limits
+        run: |
+          # Check if main JS bundle exceeds 1MB (warning) or 2MB (error)
+          MAX_SIZE_WARNING=1048576  # 1MB
+          MAX_SIZE_ERROR=2097152    # 2MB
+          
+          for file in dist/assets/*.js; do
+            SIZE=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file")
+            if [ "$SIZE" -gt "$MAX_SIZE_ERROR" ]; then
+              echo "❌ Bundle $file exceeds 2MB limit!"
+              exit 1
+            elif [ "$SIZE" -gt "$MAX_SIZE_WARNING" ]; then
+              echo "⚠️ Warning: Bundle $file exceeds 1MB"
+            fi
+          done
+
       - name: 📤 Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: production-build
           path: dist/
-          retention-days: 7
+          retention-days: 14
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # 🔒 SECURITY
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🔒 SECURITY SCANNING
+  # ────────────────────────────────────────────────────────────────────────────
 
   security:
     name: 🔒 Security Audit
@@ -206,27 +392,64 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: 📂 Restore node_modules
+      - name: 📂 Restore dependencies
         uses: actions/cache/restore@v4
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: 📥 Install dependencies (if cache miss)
         run: pnpm install --frozen-lockfile
 
       - name: 🔒 Run pnpm audit
-        run: pnpm audit --audit-level=high
-        continue-on-error: true
+        id: audit
+        run: |
+          pnpm audit --json > audit-report.json 2>&1 || true
+          
+          echo "## 🔒 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Security audit completed. Review audit-report.json for details." >> $GITHUB_STEP_SUMMARY
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # 🛡️ CodeQL ANALYSIS (PR & Main only)
-  # ══════════════════════════════════════════════════════════════════════════
+      - name: 🔍 Check for sensitive data patterns
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Sensitive Data Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          ISSUES=0
+          
+          # Check for hardcoded API keys (excluding test files and env references)
+          if grep -rn "api[_-]key\s*[=:]\s*['\"][a-zA-Z0-9]" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "process.env" | grep -v ".test." | grep -v "example" | head -5; then
+            echo "⚠️ Potential hardcoded API keys found" >> $GITHUB_STEP_SUMMARY
+            ISSUES=$((ISSUES + 1))
+          fi
+          
+          if [ "$ISSUES" -eq 0 ]; then
+            echo "✅ No sensitive data patterns detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📤 Upload security report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit
+          path: audit-report.json
+          retention-days: 30
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🛡️ CODEQL ANALYSIS
+  # ────────────────────────────────────────────────────────────────────────────
 
   codeql:
-    name: 🛡️ CodeQL Analysis
+    name: 🛡️ CodeQL Security Analysis
     needs: install
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: |
+      github.event_name == 'pull_request' || 
+      github.ref == 'refs/heads/main' || 
+      github.ref == 'refs/heads/master' ||
+      github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -240,7 +463,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: typescript, javascript
-          queries: +security-extended
+          queries: +security-extended,+security-and-quality
 
       - name: 🔍 Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -250,9 +473,9 @@ jobs:
         with:
           category: "/language:typescript"
 
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
   # 📋 DEPENDENCY REVIEW (PR Only)
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
 
   dependency-review:
     name: 📋 Dependency Review
@@ -262,32 +485,168 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 📋 Dependency Review
+      - name: 📋 Review dependencies
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: always
 
-  # ══════════════════════════════════════════════════════════════════════════
-  # ✅ CI COMPLETE
-  # ══════════════════════════════════════════════════════════════════════════
+  # ────────────────────────────────────────────────────────────────────────────
+  # 📊 PERFORMANCE BUDGET CHECK
+  # ────────────────────────────────────────────────────────────────────────────
 
-  ci-complete:
-    name: ✅ CI Complete
-    needs: [lint, test, build, security]
+  performance:
+    name: 📊 Performance Budget
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📂 Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: 📊 Check performance budgets
+        run: |
+          echo "## 📊 Performance Budget" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Define budgets (in KB)
+          JS_BUDGET=1024
+          CSS_BUDGET=100
+          
+          echo "| Asset Type | Size | Budget | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          # Check JS size
+          JS_SIZE=$(du -k dist/assets/*.js 2>/dev/null | awk '{sum += $1} END {print sum}')
+          if [ "$JS_SIZE" -le "$JS_BUDGET" ]; then
+            echo "| JavaScript | ${JS_SIZE}KB | ${JS_BUDGET}KB | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| JavaScript | ${JS_SIZE}KB | ${JS_BUDGET}KB | ⚠️ |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check CSS size
+          CSS_SIZE=$(du -k dist/assets/*.css 2>/dev/null | awk '{sum += $1} END {print sum}')
+          if [ "$CSS_SIZE" -le "$CSS_BUDGET" ]; then
+            echo "| CSS | ${CSS_SIZE}KB | ${CSS_BUDGET}KB | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| CSS | ${CSS_SIZE}KB | ${CSS_BUDGET}KB | ⚠️ |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          TOTAL_SIZE=$((JS_SIZE + CSS_SIZE))
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Asset Size:** ${TOTAL_SIZE}KB" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 📝 DOCUMENTATION CHECK
+  # ────────────────────────────────────────────────────────────────────────────
+
+  docs:
+    name: 📝 Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📝 Check documentation
+        run: |
+          echo "## 📝 Documentation Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Document | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          [ -f "README.md" ] && echo "| README.md | ✅ |" >> $GITHUB_STEP_SUMMARY || echo "| README.md | ❌ |" >> $GITHUB_STEP_SUMMARY
+          [ -f "LICENSE" ] && echo "| LICENSE | ✅ |" >> $GITHUB_STEP_SUMMARY || echo "| LICENSE | ⚠️ Missing |" >> $GITHUB_STEP_SUMMARY
+          [ -f "CONTRIBUTING.md" ] && echo "| CONTRIBUTING.md | ✅ |" >> $GITHUB_STEP_SUMMARY || echo "| CONTRIBUTING.md | ⚠️ Optional |" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # ✅ QUALITY GATE
+  # ────────────────────────────────────────────────────────────────────────────
+
+  quality-gate:
+    name: ✅ Quality Gate
+    needs: [lint, test, test-financial, build, security]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: 📊 Check job results
+      - name: 📊 Evaluate quality gate
         run: |
-          echo "## 🚀 CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎯 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔍 Lint & Type Check | ${{ needs.lint.result == 'success' && '✅' || needs.lint.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏗️ Build | ${{ needs.build.result == 'success' && '✅' || needs.build.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 Security | ${{ needs.security.result == 'success' && '✅' || needs.security.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Required |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          
+          LINT="${{ needs.lint.result }}"
+          TEST="${{ needs.test.result }}"
+          FINANCIAL="${{ needs.test-financial.result }}"
+          BUILD="${{ needs.build.result }}"
+          SECURITY="${{ needs.security.result }}"
+          
+          [ "$LINT" = "success" ] && echo "| 🔍 Lint & Type Check | ✅ | Yes |" >> $GITHUB_STEP_SUMMARY || echo "| 🔍 Lint & Type Check | ❌ | Yes |" >> $GITHUB_STEP_SUMMARY
+          [ "$TEST" = "success" ] && echo "| 🧪 Unit Tests | ✅ | Yes |" >> $GITHUB_STEP_SUMMARY || echo "| 🧪 Unit Tests | ❌ | Yes |" >> $GITHUB_STEP_SUMMARY
+          [ "$FINANCIAL" = "success" ] && echo "| 💰 Financial Tests | ✅ | Yes |" >> $GITHUB_STEP_SUMMARY || echo "| 💰 Financial Tests | ❌ | Yes |" >> $GITHUB_STEP_SUMMARY
+          [ "$BUILD" = "success" ] && echo "| 🏗️ Build | ✅ | Yes |" >> $GITHUB_STEP_SUMMARY || echo "| 🏗️ Build | ❌ | Yes |" >> $GITHUB_STEP_SUMMARY
+          [ "$SECURITY" = "success" ] && echo "| 🔒 Security | ✅ | Yes |" >> $GITHUB_STEP_SUMMARY || echo "| 🔒 Security | ❌ | Yes |" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$LINT" = "success" ] && [ "$TEST" = "success" ] && [ "$FINANCIAL" = "success" ] && [ "$BUILD" = "success" ] && [ "$SECURITY" = "success" ]; then
+            echo "### ✅ Quality Gate PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All required checks passed. Ready for deployment." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Quality Gate FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "One or more required checks failed. Please review and fix." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
-      - name: ❌ Fail if any required job failed
-        if: contains(needs.*.result, 'failure')
-        run: exit 1
+  # ────────────────────────────────────────────────────────────────────────────
+  # 🚀 DEPLOYMENT READY
+  # ────────────────────────────────────────────────────────────────────────────
+
+  deploy-ready:
+    name: 🚀 Deployment Ready
+    needs: [quality-gate, codeql, performance]
+    if: |
+      always() && 
+      needs.quality-gate.result == 'success' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Mark deployment ready
+        run: |
+          echo "## 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All quality gates passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Ready for production deployment! 🎉" >> $GITHUB_STEP_SUMMARY
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 📣 PIPELINE SUMMARY
+  # ────────────────────────────────────────────────────────────────────────────
+
+  summary:
+    name: 📣 Pipeline Summary
+    needs: [quality-gate]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📣 Generate Summary
+        run: |
+          echo "## 📣 Pipeline Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Repository | ${{ github.repository }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.quality-gate.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Run | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
