@@ -22,7 +22,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatNumber, formatPercentage, cn } from '@/lib/utils'
+import { formatNumber, formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Position } from '@/types'
 
 interface PositionManagerProps {
@@ -36,6 +37,7 @@ export function PositionManager({
 }: PositionManagerProps) {
   const positions = useTradingStore((s) => s.positions)
   const closePosition = useTradingStore((s) => s.closePosition)
+  const { formatPrice } = useCurrency()
   
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [closingPosition, setClosingPosition] = useState<Position | null>(null)
@@ -95,7 +97,7 @@ export function PositionManager({
               'text-lg font-semibold number-mono',
               totalPnL >= 0 ? 'text-green-400' : 'text-red-400'
             )}>
-              {totalPnL >= 0 ? '+' : ''}{formatCurrency(totalPnL)}
+              {totalPnL >= 0 ? '+' : ''}{formatPrice(totalPnL)}
             </p>
           </div>
         </div>
@@ -140,7 +142,7 @@ export function PositionManager({
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Total Position Value</span>
             <span className="font-medium number-mono">
-              {formatCurrency(totalValue)}
+              {formatPrice(totalValue)}
             </span>
           </div>
         </div>
@@ -173,11 +175,11 @@ export function PositionManager({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-400">Entry Price</p>
-                  <p className="number-mono">{formatCurrency(closingPosition.entryPrice)}</p>
+                  <p className="number-mono">{formatPrice(closingPosition.entryPrice)}</p>
                 </div>
                 <div>
                   <p className="text-gray-400">Current Price</p>
-                  <p className="number-mono">{formatCurrency(closingPosition.currentPrice)}</p>
+                  <p className="number-mono">{formatPrice(closingPosition.currentPrice)}</p>
                 </div>
                 <div>
                   <p className="text-gray-400">Unrealized P&L</p>
@@ -186,7 +188,7 @@ export function PositionManager({
                     closingPosition.unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'
                   )}>
                     {closingPosition.unrealizedPnL >= 0 ? '+' : ''}
-                    {formatCurrency(closingPosition.unrealizedPnL)}
+                    {formatPrice(closingPosition.unrealizedPnL)}
                   </p>
                 </div>
                 <div>
@@ -236,6 +238,7 @@ interface PositionRowProps {
 }
 
 function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowProps) {
+  const { formatPrice } = useCurrency()
   const isProfit = position.unrealizedPnL >= 0
   const isLong = position.side === 'long'
 
@@ -288,7 +291,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               </Badge>
             </p>
             <p className="text-xs text-gray-400">
-              {formatNumber(position.quantity, 4)} @ {formatCurrency(position.entryPrice)}
+              {formatNumber(position.quantity, 4)} @ {formatPrice(position.entryPrice)}
             </p>
           </div>
         </div>
@@ -303,7 +306,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               'font-medium number-mono',
               isProfit ? 'text-green-400' : 'text-red-400'
             )}>
-              {isProfit ? '+' : ''}{formatCurrency(position.unrealizedPnL)}
+              {isProfit ? '+' : ''}{formatPrice(position.unrealizedPnL)}
             </p>
             <p className={cn(
               'text-xs number-mono',
@@ -333,12 +336,12 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               <div className="grid grid-cols-3 gap-4 text-sm mb-3">
                 <div>
                   <p className="text-gray-400 text-xs">Current Price</p>
-                  <p className="number-mono">{formatCurrency(position.currentPrice)}</p>
+                  <p className="number-mono">{formatPrice(position.currentPrice)}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">Position Value</p>
                   <p className="number-mono">
-                    {formatCurrency(position.quantity * position.currentPrice)}
+                    {formatPrice(position.quantity * position.currentPrice)}
                   </p>
                 </div>
                 <div>
@@ -350,18 +353,18 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               {/* Stop Loss / Take Profit indicators */}
               <div className="flex items-center gap-2 mb-3">
                 {position.stopLoss && (
-                  <Tooltip content={`Stop Loss: ${formatCurrency(position.stopLoss)}`}>
+                  <Tooltip content={`Stop Loss: ${formatPrice(position.stopLoss)}`}>
                     <div className="flex items-center gap-1 text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded">
                       <ShieldAlert className="w-3 h-3" />
-                      SL: {formatCurrency(position.stopLoss)}
+                      SL: {formatPrice(position.stopLoss)}
                     </div>
                   </Tooltip>
                 )}
                 {position.takeProfit && (
-                  <Tooltip content={`Take Profit: ${formatCurrency(position.takeProfit)}`}>
+                  <Tooltip content={`Take Profit: ${formatPrice(position.takeProfit)}`}>
                     <div className="flex items-center gap-1 text-xs bg-green-500/10 text-green-400 px-2 py-1 rounded">
                       <Target className="w-3 h-3" />
-                      TP: {formatCurrency(position.takeProfit)}
+                      TP: {formatPrice(position.takeProfit)}
                     </div>
                   </Tooltip>
                 )}
