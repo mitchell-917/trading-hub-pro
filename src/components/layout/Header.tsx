@@ -21,8 +21,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { CurrencySelector } from '@/components/ui/CurrencySelector'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
+import { cn } from '@/lib/utils'
 
 interface HeaderProps {
   onMenuToggle?: () => void
@@ -33,6 +35,7 @@ export function Header({ onMenuToggle, className }: HeaderProps) {
   const positions = useTradingStore((s) => s.positions)
   const settings = useTradingStore((s) => s.settings)
   const updateSettings = useTradingStore((s) => s.updateSettings)
+  const { formatPrice } = useCurrency()
 
   // Compute portfolio values with useMemo to avoid infinite loops
   const portfolio = useMemo(() => {
@@ -108,7 +111,7 @@ export function Header({ onMenuToggle, className }: HeaderProps) {
       <div className="hidden md:flex items-center gap-6">
         <div className="text-center">
           <p className="text-xs text-gray-400">Portfolio Value</p>
-          <p className="font-semibold number-mono">{formatCurrency(portfolio.totalValue)}</p>
+          <p className="font-semibold number-mono">{formatPrice(portfolio.totalValue)}</p>
         </div>
         <div className="h-8 w-px bg-gray-700" />
         <div className="text-center">
@@ -117,20 +120,23 @@ export function Header({ onMenuToggle, className }: HeaderProps) {
             'font-semibold number-mono',
             portfolio.dailyPnL >= 0 ? 'text-green-400' : 'text-red-400'
           )}>
-            {portfolio.dailyPnL >= 0 ? '+' : ''}{formatCurrency(portfolio.dailyPnL)}
+            {portfolio.dailyPnL >= 0 ? '+' : ''}{formatPrice(portfolio.dailyPnL)}
           </p>
         </div>
         <div className="h-8 w-px bg-gray-700" />
         <div className="text-center">
           <p className="text-xs text-gray-400">Buying Power</p>
           <p className="font-semibold number-mono text-indigo-400">
-            {formatCurrency(portfolio.buyingPower)}
+            {formatPrice(portfolio.buyingPower)}
           </p>
         </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        {/* Currency Selector */}
+        <CurrencySelector size="sm" showLabel={false} />
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
