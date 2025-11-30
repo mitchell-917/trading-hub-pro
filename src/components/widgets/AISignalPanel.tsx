@@ -24,7 +24,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useAISignals } from '@/hooks/useAISignals'
-import { formatCurrency, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
+import { cn } from '@/lib/utils'
 import type { AISignal } from '@/types'
 
 interface AISignalPanelProps {
@@ -39,6 +40,7 @@ export function AISignalPanel({
   className,
 }: AISignalPanelProps) {
   const { signals, isLoading, analysis } = useAISignals({ symbol })
+  const { formatPrice } = useCurrency()
   const [selectedSignal, setSelectedSignal] = useState<AISignal | null>(null)
 
   // Extract sentiment and confidence from analysis with defaults
@@ -167,7 +169,7 @@ export function AISignalPanel({
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-1">Entry</p>
               <p className="font-medium number-mono text-sm">
-                {formatCurrency(primarySignal.entryPrice)}
+                {formatPrice(primarySignal.entryPrice)}
               </p>
             </div>
             <div className="text-center">
@@ -176,7 +178,7 @@ export function AISignalPanel({
                 Target
               </p>
               <p className="font-medium number-mono text-sm text-green-400">
-                {formatCurrency(primarySignal.targetPrice)}
+                {formatPrice(primarySignal.targetPrice)}
               </p>
             </div>
             <div className="text-center">
@@ -185,7 +187,7 @@ export function AISignalPanel({
                 Stop
               </p>
               <p className="font-medium number-mono text-sm text-red-400">
-                {formatCurrency(primarySignal.stopLoss)}
+                {formatPrice(primarySignal.stopLoss)}
               </p>
             </div>
           </div>
@@ -255,6 +257,7 @@ interface SignalRowProps {
 }
 
 function SignalRow({ signal, index, isSelected, onClick }: SignalRowProps) {
+  const { formatPrice } = useCurrency()
   const isLong = signal.direction === 'bullish'
   const potentialGain = ((signal.targetPrice - signal.entryPrice) / signal.entryPrice) * 100
   const potentialLoss = ((signal.stopLoss - signal.entryPrice) / signal.entryPrice) * 100
@@ -319,18 +322,18 @@ function SignalRow({ signal, index, isSelected, onClick }: SignalRowProps) {
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div>
                     <p className="text-gray-400">Entry</p>
-                    <p className="number-mono">{formatCurrency(signal.entryPrice)}</p>
+                    <p className="number-mono">{formatPrice(signal.entryPrice)}</p>
                   </div>
                   <div>
                     <p className="text-gray-400">Target</p>
                     <p className="number-mono text-green-400">
-                      {formatCurrency(signal.targetPrice)}
+                      {formatPrice(signal.targetPrice)}
                     </p>
                   </div>
                   <div>
                     <p className="text-gray-400">Stop</p>
                     <p className="number-mono text-red-400">
-                      {formatCurrency(signal.stopLoss)}
+                      {formatPrice(signal.stopLoss)}
                     </p>
                   </div>
                 </div>
