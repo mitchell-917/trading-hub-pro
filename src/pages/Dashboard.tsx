@@ -39,12 +39,14 @@ import { useMarketData } from '@/hooks/useMarketData'
 import { useTechnicalIndicators } from '@/hooks/useTechnicalIndicators'
 import { useOrderBook } from '@/hooks/useOrderBook'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
+import { formatPercentage, cn } from '@/lib/utils'
 
 export function Dashboard() {
   const selectedSymbol = useTradingStore((s) => s.selectedSymbol)
   const setSelectedSymbol = useTradingStore((s) => s.setSelectedSymbol)
   const positions = useTradingStore((s) => s.positions)
+  const { formatPrice } = useCurrency()
 
   // Compute portfolio values with useMemo to avoid infinite loops
   const portfolio = useMemo(() => {
@@ -80,14 +82,14 @@ export function Dashboard() {
   const statsCards = useMemo(() => [
     {
       title: 'Portfolio Value',
-      value: formatCurrency(portfolio.totalValue),
+      value: formatPrice(portfolio.totalValue),
       change: portfolio.dailyPnLPercent,
       icon: <DollarSign className="w-5 h-5" />,
       color: 'indigo',
     },
     {
       title: "Today's P&L",
-      value: formatCurrency(portfolio.dailyPnL),
+      value: formatPrice(portfolio.dailyPnL),
       change: portfolio.dailyPnLPercent,
       icon: portfolio.dailyPnL >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />,
       color: portfolio.dailyPnL >= 0 ? 'green' : 'red',
@@ -95,7 +97,7 @@ export function Dashboard() {
     {
       title: 'Open Positions',
       value: portfolio.positionsCount.toString(),
-      subtext: `${formatCurrency(portfolio.unrealizedPnL)} unrealized`,
+      subtext: `${formatPrice(portfolio.unrealizedPnL)} unrealized`,
       icon: <Activity className="w-5 h-5" />,
       color: 'purple',
     },
@@ -106,7 +108,7 @@ export function Dashboard() {
       icon: <Percent className="w-5 h-5" />,
       color: 'blue',
     },
-  ], [portfolio])
+  ], [portfolio, formatPrice])
 
   // Transform OHLCV data for area chart
   const areaChartData = useMemo(() => {
@@ -193,7 +195,7 @@ export function Dashboard() {
                 <div className="flex items-center gap-4">
                   <div>
                     <p className="text-3xl font-bold number-mono">
-                      {ticker ? formatCurrency(ticker.price) : '-'}
+                      {ticker ? formatPrice(ticker.price) : '-'}
                     </p>
                     {ticker && (
                       <div className="flex items-center gap-2 mt-1">
@@ -202,7 +204,7 @@ export function Dashboard() {
                           (ticker.change ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
                         )}>
                           {(ticker.change ?? 0) >= 0 ? '+' : ''}
-                          {formatCurrency(ticker.change ?? 0)}
+                          {formatPrice(ticker.change ?? 0)}
                         </span>
                         <span className={cn(
                           'text-sm number-mono',
@@ -220,13 +222,13 @@ export function Dashboard() {
                       <div>
                         <span className="text-gray-400">H: </span>
                         <span className="text-green-400 number-mono">
-                          {ticker ? formatCurrency(ticker.high24h) : '-'}
+                          {ticker ? formatPrice(ticker.high24h) : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-400">L: </span>
                         <span className="text-red-400 number-mono">
-                          {ticker ? formatCurrency(ticker.low24h) : '-'}
+                          {ticker ? formatPrice(ticker.low24h) : '-'}
                         </span>
                       </div>
                     </div>
