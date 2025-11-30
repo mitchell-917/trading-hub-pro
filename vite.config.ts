@@ -6,6 +6,8 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Base path for GitHub Pages deployment
+  base: '/trading-hub-pro/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
