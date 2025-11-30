@@ -47,30 +47,42 @@ export function CurrencyProvider({
   const [currencyCode, setCurrencyCode] = useState<string>(() => {
     return getStoredCurrency() || defaultCurrency
   })
-  const [isLoading, setIsLoading] = useState(autoDetect)
+  
+  // Determine initial loading state: only load if autoDetect is on AND no stored currency
+  const [isLoading, setIsLoading] = useState(() => {
+    if (!autoDetect) return false
+    const stored = getStoredCurrency()
+    // If we have a stored preference (that's not just default USD), no need to auto-detect
+    if (stored && stored !== 'USD') return false
+    return true
+  })
 
-  // Auto-detect currency on mount
+  // Auto-detect currency on mount (only runs if isLoading was initialized to true)
   useEffect(() => {
-    if (!autoDetect) {
-      setIsLoading(false)
-      return
-    }
+    if (!autoDetect) return
 
     // Only auto-detect if no stored preference
     const stored = getStoredCurrency()
-    if (stored && stored !== 'USD') {
-      setIsLoading(false)
-      return
-    }
+    if (stored && stored !== 'USD') return
 
+    let cancelled = false
+    
     detectAndSetCurrency()
       .then((config) => {
-        setCurrencyCode(config.code)
+        if (!cancelled) {
+          setCurrencyCode(config.code)
+        }
       })
       .catch(console.error)
       .finally(() => {
-        setIsLoading(false)
+        if (!cancelled) {
+          setIsLoading(false)
+        }
       })
+    
+    return () => {
+      cancelled = true
+    }
   }, [autoDetect])
 
   const setCurrency = useCallback((code: string) => {

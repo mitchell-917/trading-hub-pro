@@ -169,13 +169,6 @@ export function useRealTimeMarketData({
     }
   }, [symbol, enabled, enableWebSocket, isValidSymbol])
 
-  // Initialize realtime OHLCV from query data
-  useEffect(() => {
-    if (ohlcvData && ohlcvData.length > 0) {
-      setRealtimeOhlcv(ohlcvData)
-    }
-  }, [ohlcvData])
-
   const refetch = useCallback(() => {
     refetchTicker()
     refetchOhlcv()
@@ -236,13 +229,6 @@ export function useMultipleRealTimeTickers({
     staleTime: 5000,
   })
 
-  // Initialize tickers from query data
-  useEffect(() => {
-    if (initialTickers) {
-      setTickers(initialTickers)
-    }
-  }, [initialTickers])
-
   // WebSocket subscription
   useEffect(() => {
     if (!enabled || validSymbols.length === 0) {
@@ -282,8 +268,11 @@ export function useMultipleRealTimeTickers({
     }
   }, [validSymbols, enabled])
 
+  // Merge initial tickers with real-time updates (real-time takes precedence)
+  const mergedTickers = { ...initialTickers, ...tickers }
+
   return {
-    tickers,
+    tickers: mergedTickers,
     isLoading,
     isConnected,
     error: error as Error | null,
