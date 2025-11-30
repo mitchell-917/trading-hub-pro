@@ -181,19 +181,23 @@ function WatchlistItemRow({
 
   const isPositive = (ticker?.change ?? 0) >= 0
 
-  // Generate sparkline data
+  // Generate sparkline data - seeded based on symbol for deterministic values
   const sparklineData = useMemo(() => {
     if (!ticker) return []
     const data: number[] = []
     let price = ticker.price * 0.98
+    // Use symbol hash as seed for deterministic random values
+    const seed = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     for (let i = 0; i < 24; i++) {
-      const change = (Math.random() - 0.48) * price * 0.01
+      // Deterministic pseudo-random based on seed and index
+      const pseudoRandom = Math.sin(seed * (i + 1)) * 0.5 + 0.5
+      const change = (pseudoRandom - 0.48) * price * 0.01
       price += change
       data.push(price)
     }
     data.push(ticker.price)
     return data
-  }, [ticker])
+  }, [ticker, symbol])
 
   return (
     <motion.div

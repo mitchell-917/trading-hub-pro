@@ -239,17 +239,21 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
   const isProfit = position.unrealizedPnL >= 0
   const isLong = position.side === 'long'
 
-  // Generate mock sparkline data for the position
+  // Generate mock sparkline data for the position - seeded based on position id
   const sparklineData = useMemo(() => {
     const data: number[] = []
     let price = position.entryPrice
+    // Use position id hash as seed for deterministic random values
+    const seed = position.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
     for (let i = 0; i < 20; i++) {
-      price += (Math.random() - 0.5) * price * 0.01
+      // Deterministic pseudo-random based on seed and index
+      const pseudoRandom = Math.sin(seed * (i + 1)) * 0.5 + 0.5
+      price += (pseudoRandom - 0.5) * price * 0.01
       data.push(price)
     }
     data.push(position.currentPrice)
     return data
-  }, [position.entryPrice, position.currentPrice])
+  }, [position.entryPrice, position.currentPrice, position.id])
 
   return (
     <motion.div
