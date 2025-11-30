@@ -15,12 +15,13 @@ import type {
   ChartType,
   UserPreferences,
 } from '@/types'
+import { generateId } from './utils'
 
 // Default watchlist items (no mock prices - will be updated by real data)
 const DEFAULT_WATCHLIST: WatchlistItem[] = [
-  { symbol: 'BTC', name: 'Bitcoin', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
-  { symbol: 'ETH', name: 'Ethereum', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
-  { symbol: 'SOL', name: 'Solana', price: 0, change: 0, changePercent: 0, volume: 0, addedAt: Date.now() },
+  { symbol: 'BTC', name: 'Bitcoin', addedAt: Date.now() },
+  { symbol: 'ETH', name: 'Ethereum', addedAt: Date.now() },
+  { symbol: 'SOL', name: 'Solana', addedAt: Date.now() },
 ]
 
 // Initial account balance
@@ -151,7 +152,7 @@ export const useTradingStore = create<TradingState>()(
             
             // Create a closed order record
             const closedOrder: Order = {
-              id: `order-${Date.now()}`,
+              id: generateId('order'),
               symbol: position.symbol,
               type: 'market',
               side: position.side === 'long' ? 'sell' : 'buy',
@@ -159,9 +160,10 @@ export const useTradingStore = create<TradingState>()(
               price: exitPrice,
               status: 'filled',
               filledQuantity: position.quantity,
-              averagePrice: exitPrice,
+              timeInForce: 'gtc',
               createdAt: Date.now(),
               updatedAt: Date.now(),
+              filledAt: Date.now(),
             }
 
             set(

@@ -146,7 +146,7 @@ describe('Trading Store', () => {
       if (initialLength > 0) {
         const positionToClose = state.positions[0]
         act(() => {
-          useTradingStore.getState().closePosition(positionToClose.id)
+          useTradingStore.getState().closePosition(positionToClose.id, positionToClose.currentPrice)
         })
         expect(useTradingStore.getState().positions.length).toBe(initialLength - 1)
       }
@@ -156,7 +156,7 @@ describe('Trading Store', () => {
       const state = useTradingStore.getState()
       const initialLength = state.positions.length
       act(() => {
-        useTradingStore.getState().closePosition('non-existent-id')
+        useTradingStore.getState().closePosition('non-existent-id', 50000)
       })
       expect(useTradingStore.getState().positions.length).toBe(initialLength)
     })
@@ -256,12 +256,14 @@ describe('Trading Store', () => {
       const activeSymbol = useTradingStore.getState().activeSymbol
       const mockTicker = {
         symbol: activeSymbol, // Use the active symbol (BTC)
+        name: 'Bitcoin',
         price: 50000,
-        change24h: 2.5,
+        change: 1250,
+        changePercent: 2.5,
+        volume: 1000000,
         high24h: 51000,
         low24h: 49000,
-        volume24h: 1000000,
-        timestamp: Date.now(),
+        lastUpdated: Date.now(),
       }
       act(() => {
         useTradingStore.getState().updateTickers([mockTicker])

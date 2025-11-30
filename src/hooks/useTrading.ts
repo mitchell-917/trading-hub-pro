@@ -99,8 +99,7 @@ export function useTrading(): UseTradingReturn {
           status: params.type === 'market' ? 'filled' : 'open',
           quantity: params.quantity,
           filledQuantity: params.type === 'market' ? params.quantity : 0,
-          price: params.price,
-          averagePrice: params.type === 'market' ? executionPrice : undefined,
+          price: params.type === 'market' ? executionPrice : params.price,
           stopPrice: params.stopPrice,
           timeInForce: params.timeInForce || 'gtc',
           createdAt: Date.now(),
@@ -123,7 +122,6 @@ export function useTrading(): UseTradingReturn {
             side: 'long',
             entryPrice: executionPrice,
             leverage: 1,
-            marginUsed: orderValue,
           })
         }
 

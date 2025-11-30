@@ -157,7 +157,7 @@ describe('useTradingStore', () => {
       useTradingStore.setState({ positions: [testPosition] })
       
       act(() => {
-        useTradingStore.getState().closePosition('test-1')
+        useTradingStore.getState().closePosition('test-1', testPosition.currentPrice)
       })
       
       const { positions } = useTradingStore.getState()
@@ -173,7 +173,7 @@ describe('useTradingStore', () => {
       useTradingStore.setState({ positions })
       
       act(() => {
-        useTradingStore.getState().closePosition('pos-1')
+        useTradingStore.getState().closePosition('pos-1', positions[0].currentPrice)
       })
       
       const state = useTradingStore.getState()
