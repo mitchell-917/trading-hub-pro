@@ -201,7 +201,7 @@ describe('useMarketData Hook', () => {
     })
 
     it('handles undefined symbol', () => {
-      const { result } = renderHook(() => useMarketData(undefined as any))
+      const { result } = renderHook(() => useMarketData(undefined as unknown as string))
       expect(result.current).toBeDefined()
     })
 

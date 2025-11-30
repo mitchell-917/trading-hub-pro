@@ -54,6 +54,7 @@ describe('React Component Patterns', () => {
   })
 
   describe('Compound Components', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const TabContext = createContext({ activeTab: '', setActiveTab: (_: string) => {} })
 
     function Tabs({ children, defaultTab }: { children: React.ReactNode; defaultTab: string }) {
@@ -240,35 +241,43 @@ describe('Effect Patterns', () => {
       name: string
     }
 
-    function UserProfile({ userId }: { userId: number }) {
-      const [user, setUser] = useState<User | null>(null)
-      const [loading, setLoading] = useState(true)
-      const [error, setError] = useState<Error | null>(null)
+    // Custom hook for data fetching to demonstrate the pattern
+    function useFetchUser(userId: number) {
+      const [state, setState] = useState<{
+        user: User | null
+        loading: boolean
+        error: Error | null
+      }>({ user: null, loading: true, error: null })
 
       useEffect(() => {
         let cancelled = false
-        setLoading(true)
-        setError(null)
 
-        fetch(`/api/users/${userId}`)
-          .then(res => res.json())
-          .then(data => {
+        const fetchData = async () => {
+          try {
+            const res = await fetch(`/api/users/${userId}`)
+            const data = await res.json()
             if (!cancelled) {
-              setUser(data)
-              setLoading(false)
+              setState({ user: data, loading: false, error: null })
             }
-          })
-          .catch(err => {
+          } catch (err) {
             if (!cancelled) {
-              setError(err)
-              setLoading(false)
+              setState({ user: null, loading: false, error: err as Error })
             }
-          })
+          }
+        }
+
+        fetchData()
 
         return () => {
           cancelled = true
         }
       }, [userId])
+
+      return state
+    }
+
+    function UserProfile({ userId }: { userId: number }) {
+      const { user, loading, error } = useFetchUser(userId)
 
       if (loading) return <div data-testid="loading">Loading...</div>
       if (error) return <div data-testid="error">{error.message}</div>

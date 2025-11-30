@@ -46,7 +46,8 @@ describe('cn (className utility)', () => {
   })
 
   it('handles false', () => {
-    expect(cn('foo', false && 'hidden', 'bar')).toBe('foo bar')
+    const shouldHide = false
+    expect(cn('foo', shouldHide && 'hidden', 'bar')).toBe('foo bar')
   })
 
   it('handles conditional classes', () => {
@@ -55,7 +56,8 @@ describe('cn (className utility)', () => {
   })
 
   it('handles falsy values', () => {
-    expect(cn('class-a', false && 'class-b')).toBe('class-a')
+    const shouldAddClassB = false
+    expect(cn('class-a', shouldAddClassB && 'class-b')).toBe('class-a')
     expect(cn('class-a', null, undefined, 'class-c')).toContain('class-a')
     expect(cn('class-a', null, undefined, 'class-c')).toContain('class-c')
   })

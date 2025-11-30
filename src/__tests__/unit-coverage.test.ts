@@ -468,7 +468,7 @@ describe('JSON Operations', () => {
   })
 
   it('handles circular references', () => {
-    const obj: any = { a: 1 }
+    const obj: Record<string, unknown> = { a: 1 }
     obj.self = obj
     expect(() => JSON.stringify(obj)).toThrow()
   })
@@ -572,7 +572,7 @@ describe('Error Handling', () => {
     let caught = false
     try {
       throw new Error('test')
-    } catch (e) {
+    } catch {
       caught = true
     }
     expect(caught).toBe(true)
@@ -582,7 +582,7 @@ describe('Error Handling', () => {
     let finallyCalled = false
     try {
       throw new Error('test')
-    } catch (e) {
+    } catch {
       // ignore
     } finally {
       finallyCalled = true
