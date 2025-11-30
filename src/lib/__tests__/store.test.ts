@@ -62,11 +62,13 @@ describe('useTradingStore', () => {
   beforeEach(() => {
     // Reset store state before each test
     useTradingStore.setState({
+      tickers: [],
       activeSymbol: 'BTC',
       selectedSymbol: 'BTC',
       positions: [],
       orders: [],
       watchlist: [],
+      cashBalance: 100000,
       settings: {
         theme: 'dark',
         notifications: true,
@@ -278,15 +280,15 @@ describe('useTradingStore', () => {
   })
 
   describe('getPortfolioValue', () => {
-    it('calculates total value from positions', () => {
+    it('calculates total value from positions and cash', () => {
       const positions = [
         createPosition({ id: '1', quantity: 2, currentPrice: 45000 }),
       ]
       
-      useTradingStore.setState({ positions })
+      useTradingStore.setState({ positions, cashBalance: 10000 })
       const portfolio = useTradingStore.getState().getPortfolioValue()
       
-      expect(portfolio.totalValue).toBe(90000) // 2 * 45000
+      expect(portfolio.totalValue).toBe(100000) // 2 * 45000 + 10000 cash
     })
 
     it('calculates unrealized PnL', () => {
@@ -313,17 +315,17 @@ describe('useTradingStore', () => {
       expect(portfolio.positionsCount).toBe(2)
     })
 
-    it('returns zero values for empty positions', () => {
-      useTradingStore.setState({ positions: [] })
+    it('returns cash balance for empty positions', () => {
+      useTradingStore.setState({ positions: [], cashBalance: 100000 })
       const portfolio = useTradingStore.getState().getPortfolioValue()
       
-      expect(portfolio.totalValue).toBe(0)
+      expect(portfolio.totalValue).toBe(100000) // Just cash
       expect(portfolio.unrealizedPnL).toBe(0)
       expect(portfolio.positionsCount).toBe(0)
     })
 
     it('calculates buying power', () => {
-      useTradingStore.setState({ positions: [] })
+      useTradingStore.setState({ positions: [], cashBalance: 100000 })
       const portfolio = useTradingStore.getState().getPortfolioValue()
       
       expect(portfolio.buyingPower).toBe(100000) // Full buying power with no positions
@@ -335,16 +337,16 @@ describe('usePortfolioStore', () => {
   beforeEach(() => {
     usePortfolioStore.setState({
       positions: [],
-      totalValue: 0,
+      totalValue: 100000,
       totalPnl: 0,
-      cashBalance: 25000,
+      cashBalance: 100000,
     })
   })
 
   describe('Initial State', () => {
     it('has default cash balance', () => {
       const { cashBalance } = usePortfolioStore.getState()
-      expect(cashBalance).toBe(25000)
+      expect(cashBalance).toBe(100000)
     })
 
     it('has empty positions initially', () => {

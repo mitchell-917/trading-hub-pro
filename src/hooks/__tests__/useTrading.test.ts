@@ -348,13 +348,15 @@ describe('useTrading', () => {
   })
 
   describe('hook return values', () => {
-    it('provides balance value', () => {
+    it('provides balance value from store', () => {
       const { result } = renderHook(() => useTrading(), { wrapper })
-      expect(result.current.balance).toBe(50000)
+      // Balance comes from store's cashBalance which starts at $100,000
+      expect(result.current.balance).toBe(100000)
     })
 
-    it('provides buyingPower value', () => {
+    it('provides buyingPower value (equals cash balance)', () => {
       const { result } = renderHook(() => useTrading(), { wrapper })
+      // Buying power equals cash balance ($100,000)
       expect(result.current.buyingPower).toBe(100000)
     })
 

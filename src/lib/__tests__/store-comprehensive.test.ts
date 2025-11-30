@@ -251,10 +251,29 @@ describe('Trading Store', () => {
   })
 
   describe('getActiveTicker', () => {
-    it('returns ticker for active symbol', () => {
-      const ticker = useTradingStore.getState().getActiveTicker()
+    it('returns ticker for active symbol when tickers exist', () => {
+      // First populate tickers (simulating real data fetch)
       const activeSymbol = useTradingStore.getState().activeSymbol
+      const mockTicker = {
+        symbol: activeSymbol, // Use the active symbol (BTC)
+        price: 50000,
+        change24h: 2.5,
+        high24h: 51000,
+        low24h: 49000,
+        volume24h: 1000000,
+        timestamp: Date.now(),
+      }
+      act(() => {
+        useTradingStore.getState().updateTickers([mockTicker])
+      })
+      const ticker = useTradingStore.getState().getActiveTicker()
       expect(ticker?.symbol).toBe(activeSymbol)
+    })
+
+    it('returns undefined when no tickers loaded', () => {
+      // Store starts with empty tickers array (real data not yet loaded)
+      const ticker = useTradingStore.getState().getActiveTicker()
+      expect(ticker).toBeUndefined()
     })
 
     it('returns undefined for non-existent symbol', () => {

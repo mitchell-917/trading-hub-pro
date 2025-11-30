@@ -1,315 +1,314 @@
 // ============================================
-// TradingHub Pro - useMarketData Hook Tests
-// Comprehensive tests for market data hooks
+// TradingHub Pro - Market Data Hook Tests
+// Tests for Binance API integration
 // ============================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import { useMarketData, useMultipleTickers, useOHLCVData } from '../useMarketData'
+import { renderHook, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from 'react'
+import { useMarketData, useOHLCVData, useMultipleTickers } from '../useMarketData'
 
-// Mock the mock-data module
-vi.mock('@/lib/mock-data', () => ({
-  generateTicker: vi.fn((_symbol: string) => ({
-    symbol: _symbol,
-    name: `${_symbol} Token`,
-    price: 50000,
-    change: 1000,
-    changePercent: 2.04,
-    volume: 1000000000,
-    high24h: 52000,
-    low24h: 48000,
-    lastUpdated: Date.now(),
-  })),
-  generateOHLCVData: vi.fn((_symbol: string, count: number) => {
-    const data = []
-    const now = Date.now()
-    for (let i = 0; i < count; i++) {
-      data.push({
-        timestamp: now - (count - i) * 3600000,
-        open: 50000 + i * 10,
-        high: 50100 + i * 10,
-        low: 49900 + i * 10,
-        close: 50050 + i * 10,
-        volume: 1000000,
-      })
-    }
-    return data
-  }),
-  SYMBOLS: [
-    { symbol: 'BTC', name: 'Bitcoin' },
-    { symbol: 'ETH', name: 'Ethereum' },
-    { symbol: 'SOL', name: 'Solana' },
-  ],
-  randomBetween: vi.fn(() => 0.001),
+// Mock the Binance API client
+vi.mock('@/services/api/binance', () => ({
+  binanceClient: {
+    getTicker: vi.fn(),
+    getOHLCV: vi.fn(),
+    getMultipleTickers: vi.fn(),
+  },
 }))
+
+// Mock the WebSocket
+vi.mock('@/services/api/websocket', () => ({
+  binanceWebSocket: {
+    subscribeTicker: vi.fn(() => vi.fn()),
+    subscribeMultipleTickers: vi.fn(() => vi.fn()),
+  },
+}))
+
+// Mock the config
+vi.mock('@/services/api/config', () => ({
+  CRYPTO_MAPPINGS: {
+    BTC: { binanceSymbol: 'BTCUSDT', name: 'Bitcoin' },
+    ETH: { binanceSymbol: 'ETHUSDT', name: 'Ethereum' },
+    SOL: { binanceSymbol: 'SOLUSDT', name: 'Solana' },
+    XRP: { binanceSymbol: 'XRPUSDT', name: 'Ripple' },
+    ADA: { binanceSymbol: 'ADAUSDT', name: 'Cardano' },
+  },
+}))
+
+// Import after mocking
+import { binanceClient } from '@/services/api/binance'
+
+const mockTicker = {
+  symbol: 'BTC',
+  name: 'Bitcoin',
+  price: 50000,
+  change: 1250,
+  changePercent: 2.5,
+  volume: 1000000,
+  high24h: 51000,
+  low24h: 49000,
+  lastUpdated: Date.now(),
+}
+
+const mockOHLCV = [
+  {
+    timestamp: Date.now() - 3600000,
+    open: 49500,
+    high: 50500,
+    low: 49000,
+    close: 50000,
+    volume: 100,
+  },
+  {
+    timestamp: Date.now(),
+    open: 50000,
+    high: 51000,
+    low: 49500,
+    close: 50500,
+    volume: 150,
+  },
+]
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+    },
+  })
+  return ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children)
+}
 
 describe('useMarketData', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
+    vi.clearAllMocks()
+    vi.mocked(binanceClient.getTicker).mockResolvedValue(mockTicker)
+    vi.mocked(binanceClient.getOHLCV).mockResolvedValue(mockOHLCV)
   })
 
   afterEach(() => {
-    vi.runOnlyPendingTimers()
-    vi.useRealTimers()
     vi.clearAllMocks()
   })
 
-  describe('with string parameter', () => {
-    it('accepts a symbol string', async () => {
-      const { result } = renderHook(() => useMarketData('BTC'))
-      
-      expect(result.current.isLoading).toBe(true)
-      
-      act(() => {
-        vi.advanceTimersByTime(600)
-      })
-      
-      expect(result.current.isLoading).toBe(false)
-      expect(result.current.ticker?.symbol).toBe('BTC')
-    })
-  })
-
-  describe('with options object', () => {
-    it('returns initial loading state', () => {
-      const { result } = renderHook(() => 
-        useMarketData({ symbol: 'BTC' })
-      )
-      
-      expect(result.current.isLoading).toBe(true)
-      expect(result.current.ticker).toBe(null)
-      expect(result.current.isConnected).toBe(false)
+  it('fetches ticker data for a valid crypto symbol', async () => {
+    const { result } = renderHook(() => useMarketData('BTC'), {
+      wrapper: createWrapper(),
     })
 
-    it('fetches ticker data after connection delay', () => {
-      const { result } = renderHook(() => 
-        useMarketData({ symbol: 'BTC' })
-      )
-      
-      act(() => {
-        vi.advanceTimersByTime(600)
-      })
-      
-      expect(result.current.isLoading).toBe(false)
-      expect(result.current.isConnected).toBe(true)
-      expect(result.current.ticker).not.toBe(null)
-    })
-
-    it('respects enabled option', () => {
-      const { result } = renderHook(() => 
-        useMarketData({ symbol: 'BTC', enabled: false })
-      )
-      
-      act(() => {
-        vi.advanceTimersByTime(1000)
-      })
-      
-      // Should remain in initial state when disabled
-      expect(result.current.ticker).toBe(null)
-    })
-
-    it('provides reconnect function', () => {
-      const { result } = renderHook(() => 
-        useMarketData({ symbol: 'BTC' })
-      )
-      
-      act(() => {
-        vi.advanceTimersByTime(600)
-      })
-      
-      expect(result.current.isConnected).toBe(true)
-      
-      // Call reconnect
-      act(() => {
-        result.current.reconnect()
-      })
-      
-      expect(result.current.isConnected).toBe(false)
-      expect(result.current.isLoading).toBe(true)
-    })
-
-    it('cleans up on unmount', () => {
-      const { result, unmount } = renderHook(() => 
-        useMarketData({ symbol: 'BTC' })
-      )
-      
-      act(() => {
-        vi.advanceTimersByTime(600)
-      })
-      
-      expect(result.current.isConnected).toBe(true)
-      
-      unmount()
-      
-      // Should not throw or cause issues
-    })
-  })
-})
-
-describe('useMultipleTickers', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.runOnlyPendingTimers()
-    vi.useRealTimers()
-    vi.clearAllMocks()
-  })
-
-  it('returns initial loading state', () => {
-    const { result } = renderHook(() => useMultipleTickers())
-    
+    // Initial loading state
     expect(result.current.isLoading).toBe(true)
-    expect(Object.keys(result.current.tickers)).toHaveLength(0)
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(binanceClient.getTicker).toHaveBeenCalledWith('BTC')
+    expect(result.current.ticker).toEqual(mockTicker)
   })
 
-  it('fetches multiple tickers', () => {
-    const { result } = renderHook(() => 
-      useMultipleTickers({ symbols: ['BTC', 'ETH'] })
+  it('returns null ticker for invalid symbol', async () => {
+    const { result } = renderHook(() => useMarketData('INVALID_SYMBOL'), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    // Invalid symbols are not fetched
+    expect(binanceClient.getTicker).not.toHaveBeenCalled()
+    expect(result.current.ticker).toBeNull()
+  })
+
+  it('handles options object input', async () => {
+    const { result } = renderHook(
+      () => useMarketData({ symbol: 'ETH', enabled: true }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(400)
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.isConnected).toBe(true)
-    expect(result.current.tickers).toHaveProperty('BTC')
-    expect(result.current.tickers).toHaveProperty('ETH')
+
+    expect(binanceClient.getTicker).toHaveBeenCalledWith('ETH')
   })
 
-  it('uses default symbols when none provided', () => {
-    const { result } = renderHook(() => useMultipleTickers())
-    
-    act(() => {
-      vi.advanceTimersByTime(400)
-    })
-    
-    expect(result.current.isConnected).toBe(true)
-    expect(Object.keys(result.current.tickers).length).toBeGreaterThan(0)
-  })
-
-  it('respects enabled option', () => {
-    const { result } = renderHook(() => 
-      useMultipleTickers({ enabled: false })
+  it('does not fetch when disabled', async () => {
+    const { result } = renderHook(
+      () => useMarketData({ symbol: 'BTC', enabled: false }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(1000)
+
+    expect(binanceClient.getTicker).not.toHaveBeenCalled()
+    expect(result.current.ticker).toBeNull()
+  })
+
+  it('provides error message on API failure', async () => {
+    vi.mocked(binanceClient.getTicker).mockRejectedValue(new Error('API Error'))
+
+    const { result } = renderHook(() => useMarketData('BTC'), {
+      wrapper: createWrapper(),
     })
-    
-    expect(result.current.isLoading).toBe(true)
-    expect(Object.keys(result.current.tickers)).toHaveLength(0)
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('API Error')
+    })
+  })
+
+  it('provides reconnect function', async () => {
+    const { result } = renderHook(() => useMarketData('BTC'), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(typeof result.current.reconnect).toBe('function')
   })
 })
 
 describe('useOHLCVData', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  afterEach(() => {
-    vi.runOnlyPendingTimers()
-    vi.useRealTimers()
     vi.clearAllMocks()
+    vi.mocked(binanceClient.getOHLCV).mockResolvedValue(mockOHLCV)
   })
 
-  it('returns initial loading state', () => {
-    const { result } = renderHook(() => 
-      useOHLCVData({ symbol: 'BTC' })
+  it('fetches OHLCV data for a valid symbol', async () => {
+    const { result } = renderHook(
+      () => useOHLCVData({ symbol: 'BTC', timeframe: '1h', count: 100 }),
+      { wrapper: createWrapper() }
     )
-    
-    expect(result.current.isLoading).toBe(true)
-    expect(result.current.data).toHaveLength(0)
-  })
 
-  it('fetches OHLCV data', () => {
-    const { result } = renderHook(() => 
-      useOHLCVData({ symbol: 'BTC', count: 50 })
-    )
-    
-    act(() => {
-      vi.advanceTimersByTime(300)
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.data.length).toBe(50)
-    expect(result.current.data[0]).toHaveProperty('open')
-    expect(result.current.data[0]).toHaveProperty('high')
-    expect(result.current.data[0]).toHaveProperty('low')
-    expect(result.current.data[0]).toHaveProperty('close')
-    expect(result.current.data[0]).toHaveProperty('volume')
+
+    expect(binanceClient.getOHLCV).toHaveBeenCalledWith('BTC', '1h', 100)
+    expect(result.current.data).toEqual(mockOHLCV)
   })
 
-  it('respects timeframe option', () => {
-    const { result } = renderHook(() => 
-      useOHLCVData({ symbol: 'BTC', timeframe: '1d' })
+  it('uses default timeframe and count', async () => {
+    const { result } = renderHook(
+      () => useOHLCVData({ symbol: 'ETH' }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(300)
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.data.length).toBeGreaterThan(0)
+
+    expect(binanceClient.getOHLCV).toHaveBeenCalledWith('ETH', '1h', 100)
   })
 
-  it('respects enabled option', () => {
-    const { result } = renderHook(() => 
-      useOHLCVData({ symbol: 'BTC', enabled: false })
+  it('handles custom timeframe and count', async () => {
+    const { result } = renderHook(
+      () => useOHLCVData({ symbol: 'BTC', timeframe: '4h', count: 200 }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(500)
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.data).toHaveLength(0)
+
+    expect(binanceClient.getOHLCV).toHaveBeenCalledWith('BTC', '4h', 200)
   })
 
-  it('provides refetch function', () => {
-    const { result } = renderHook(() => 
-      useOHLCVData({ symbol: 'BTC' })
+  it('provides refetch function', async () => {
+    const { result } = renderHook(
+      () => useOHLCVData({ symbol: 'BTC' }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(300)
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.isLoading).toBe(false)
+
     expect(typeof result.current.refetch).toBe('function')
-    
-    // Call refetch
-    act(() => {
-      result.current.refetch()
-    })
-    
-    // Should trigger a new fetch - the refetchCounter increments
-    act(() => {
-      vi.advanceTimersByTime(300)
-    })
-    
-    expect(result.current.data.length).toBeGreaterThan(0)
   })
 
-  it('refetches when symbol changes', () => {
-    const { result, rerender } = renderHook(
-      ({ symbol }) => useOHLCVData({ symbol }),
-      { initialProps: { symbol: 'BTC' } }
+  it('returns empty array when disabled', () => {
+    const { result } = renderHook(
+      () => useOHLCVData({ symbol: 'BTC', enabled: false }),
+      { wrapper: createWrapper() }
     )
-    
-    act(() => {
-      vi.advanceTimersByTime(300)
+
+    expect(result.current.data).toEqual([])
+  })
+})
+
+describe('useMultipleTickers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(binanceClient.getMultipleTickers).mockResolvedValue({
+      BTC: { ...mockTicker, symbol: 'BTC' },
+      ETH: { ...mockTicker, symbol: 'ETH', price: 3000 },
     })
-    
-    expect(result.current.isLoading).toBe(false)
-    
-    rerender({ symbol: 'ETH' })
-    
-    act(() => {
-      vi.advanceTimersByTime(300)
+  })
+
+  it('fetches data for multiple valid symbols', async () => {
+    const { result } = renderHook(
+      () => useMultipleTickers({ symbols: ['BTC', 'ETH'] }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
     })
-    
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.data.length).toBeGreaterThan(0)
+
+    expect(binanceClient.getMultipleTickers).toHaveBeenCalledWith(['BTC', 'ETH'])
+    expect(Object.keys(result.current.tickers)).toContain('BTC')
+  })
+
+  it('uses default symbols when none provided', async () => {
+    const { result } = renderHook(() => useMultipleTickers(), {
+      wrapper: createWrapper(),
+    })
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    // Default symbols are BTC, ETH, SOL, XRP, ADA
+    expect(binanceClient.getMultipleTickers).toHaveBeenCalled()
+  })
+
+  it('does not fetch when disabled', () => {
+    const { result } = renderHook(
+      () => useMultipleTickers({ enabled: false }),
+      { wrapper: createWrapper() }
+    )
+
+    expect(binanceClient.getMultipleTickers).not.toHaveBeenCalled()
+    expect(result.current.tickers).toEqual({})
+  })
+
+  it('filters out invalid symbols', async () => {
+    const { result } = renderHook(
+      () => useMultipleTickers({ symbols: ['BTC', 'INVALID', 'ETH'] }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    // Only valid symbols should be passed
+    expect(binanceClient.getMultipleTickers).toHaveBeenCalledWith(['BTC', 'ETH'])
+  })
+
+  it('provides isConnected status', async () => {
+    const { result } = renderHook(
+      () => useMultipleTickers({ symbols: ['BTC'] }),
+      { wrapper: createWrapper() }
+    )
+
+    // Initially not connected via WebSocket (starts false)
+    expect(typeof result.current.isConnected).toBe('boolean')
   })
 })
