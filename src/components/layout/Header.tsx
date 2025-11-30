@@ -3,7 +3,7 @@
 // Main navigation and branding
 // ============================================
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Menu,
@@ -30,11 +30,35 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle, className }: HeaderProps) {
-  const { portfolio, settings, toggleTheme } = useTradingStore((s) => ({
-    portfolio: s.getPortfolioValue(),
-    settings: s.settings,
-    toggleTheme: () => s.updateSettings({ theme: s.settings.theme === 'dark' ? 'light' : 'dark' }),
-  }))
+  const positions = useTradingStore((s) => s.positions)
+  const settings = useTradingStore((s) => s.settings)
+  const updateSettings = useTradingStore((s) => s.updateSettings)
+
+  // Compute portfolio values with useMemo to avoid infinite loops
+  const portfolio = useMemo(() => {
+    const totalValue = positions.reduce(
+      (sum, p) => sum + p.quantity * p.currentPrice,
+      0
+    )
+    const unrealizedPnL = positions.reduce(
+      (sum, p) => sum + p.unrealizedPnL,
+      0
+    )
+    const dailyPnL = unrealizedPnL * 0.3
+    const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
+    const buyingPower = 100000 - totalValue
+
+    return {
+      totalValue,
+      dailyPnL,
+      dailyPnLPercent,
+      unrealizedPnL,
+      positionsCount: positions.length,
+      buyingPower,
+    }
+  }, [positions])
+
+  const toggleTheme = () => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
 
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)

@@ -44,7 +44,31 @@ import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
 export function Dashboard() {
   const selectedSymbol = useTradingStore((s) => s.selectedSymbol)
   const setSelectedSymbol = useTradingStore((s) => s.setSelectedSymbol)
-  const portfolio = useTradingStore((s) => s.getPortfolioValue())
+  const positions = useTradingStore((s) => s.positions)
+
+  // Compute portfolio values with useMemo to avoid infinite loops
+  const portfolio = useMemo(() => {
+    const totalValue = positions.reduce(
+      (sum, p) => sum + p.quantity * p.currentPrice,
+      0
+    )
+    const unrealizedPnL = positions.reduce(
+      (sum, p) => sum + p.unrealizedPnL,
+      0
+    )
+    const dailyPnL = unrealizedPnL * 0.3
+    const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
+    const buyingPower = 100000 - totalValue
+
+    return {
+      totalValue,
+      dailyPnL,
+      dailyPnLPercent,
+      unrealizedPnL,
+      positionsCount: positions.length,
+      buyingPower,
+    }
+  }, [positions])
 
   const { ticker, ohlcv } = useMarketData(selectedSymbol)
   const { rsi } = useTechnicalIndicators(ohlcv)

@@ -3,7 +3,7 @@
 // Comprehensive portfolio analysis and performance tracking
 // ============================================
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   PieChart,
@@ -46,6 +46,30 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useTradingStore } from '@/lib/store'
 import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
 import type { Position } from '@/types'
+
+// Helper to compute portfolio values
+function computePortfolio(positions: Position[]) {
+  const totalValue = positions.reduce(
+    (sum, p) => sum + p.quantity * p.currentPrice,
+    0
+  )
+  const unrealizedPnL = positions.reduce(
+    (sum, p) => sum + p.unrealizedPnL,
+    0
+  )
+  const dailyPnL = unrealizedPnL * 0.3
+  const dailyPnLPercent = totalValue > 0 ? (dailyPnL / totalValue) * 100 : 0
+  const buyingPower = 100000 - totalValue
+
+  return {
+    totalValue,
+    dailyPnL,
+    dailyPnLPercent,
+    unrealizedPnL,
+    positionsCount: positions.length,
+    buyingPower,
+  }
+}
 
 // Performance data generation - deterministic based on seed
 const generatePerformanceData = (days: number, seed: number) => {
@@ -156,7 +180,9 @@ export function Portfolio() {
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1M')
   const [selectedMetric, setSelectedMetric] = useState<'value' | 'pnl'>('value')
   const positions = useTradingStore((s) => s.positions)
-  const portfolio = useTradingStore((s) => s.getPortfolioValue())
+  
+  // Compute portfolio values with useMemo to avoid infinite loops
+  const portfolio = useMemo(() => computePortfolio(positions), [positions])
   
   // Use a stable seed based on positions count for deterministic random
   const seed = useMemo(() => positions.length + 42, [positions.length])
