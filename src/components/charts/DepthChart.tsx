@@ -14,7 +14,8 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { OrderBookLevel } from '@/types'
-import { cn, formatCurrency, formatNumber } from '@/lib/utils'
+import { cn, formatNumber } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 
 interface DepthChartProps {
   bids: OrderBookLevel[]
@@ -36,9 +37,10 @@ interface DepthDataPoint {
 interface DepthTooltipProps {
   active?: boolean
   payload?: Array<{ payload: DepthDataPoint }>
+  formatPrice: (value: number, decimals?: number) => string
 }
 
-function DepthChartTooltip({ active, payload }: DepthTooltipProps) {
+function DepthChartTooltip({ active, payload, formatPrice }: DepthTooltipProps) {
   if (!active || !payload || !payload.length) return null
 
   const point = payload[0].payload
@@ -47,7 +49,7 @@ function DepthChartTooltip({ active, payload }: DepthTooltipProps) {
   return (
     <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
       <div className="text-xs text-gray-400 mb-1">
-        Price: {formatCurrency(point.price)}
+        Price: {formatPrice(point.price)}
       </div>
       {isBid ? (
         <div className="text-green-400 text-sm font-medium">
@@ -69,6 +71,8 @@ export function DepthChart({
   midPrice,
   className,
 }: DepthChartProps) {
+  const { formatPrice } = useCurrency()
+
   const chartData = useMemo(() => {
     // Sort bids (descending) and asks (ascending)
     const sortedBids = [...bids].sort((a, b) => b.price - a.price)
@@ -140,9 +144,9 @@ export function DepthChart({
   }, [bids, asks])
 
   // Memoized tooltip renderer
-  const renderTooltip = useCallback((props: DepthTooltipProps) => {
-    return <DepthChartTooltip {...props} />
-  }, [])
+  const renderTooltip = useCallback((props: Omit<DepthTooltipProps, 'formatPrice'>) => {
+    return <DepthChartTooltip {...props} formatPrice={formatPrice} />
+  }, [formatPrice])
 
   if (chartData.length === 0) {
     return (
@@ -205,7 +209,7 @@ export function DepthChart({
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6b7280', fontSize: 10 }}
-            tickFormatter={(value) => formatCurrency(value, 0)}
+            tickFormatter={(value) => formatPrice(value, 0)}
             interval="preserveStartEnd"
           />
 
