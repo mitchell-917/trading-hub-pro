@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.96% </span>
+                <span class="strong">94.64% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>103/112</span>
+                <span class='fraction'>106/112</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">63.15% </span>
+                <span class="strong">73.68% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/19</span>
+                <span class='fraction'>14/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.1% </span>
+                <span class="strong">93.4% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>82/91</span>
+                <span class='fraction'>85/91</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.74% </span>
+                <span class="strong">94.49% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>100/109</span>
+                <span class='fraction'>103/109</span>
             </div>
         
             
@@ -977,20 +977,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">84x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -999,10 +999,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">43x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1630,11 +1630,11 @@ export const useOrdersStore = create&lt;OrdersState&gt;()(
         )
       },
 &nbsp;
-      updateOrder: <span class="fstat-no" title="function not covered" >(o</span>rderId: string, updates: Partial&lt;Order&gt;) =&gt; {
-<span class="cstat-no" title="statement not covered" >        set(</span>
-<span class="fstat-no" title="function not covered" >          (s</span>tate) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
-            orders: state.orders.map(<span class="fstat-no" title="function not covered" >(o</span>) =&gt;
-<span class="cstat-no" title="statement not covered" >              o.id === orderId ? { ...o, ...updates } : o</span>
+      updateOrder: (orderId: string, updates: Partial&lt;Order&gt;) =&gt; {
+        set(
+          (state) =&gt; ({
+            orders: state.orders.map((o) =&gt;
+              o.id === orderId ? <span class="branch-0 cbranch-no" title="branch not covered" >{ ...o, ...updates } : o</span>
             ),
           }),
           false,
@@ -1648,7 +1648,7 @@ export const useOrdersStore = create&lt;OrdersState&gt;()(
             orders: state.orders.map((o) =&gt;
               o.id === orderId
                 ? { ...o, status: 'cancelled' as const, updatedAt: Date.now() }
-                : <span class="branch-1 cbranch-no" title="branch not covered" >o</span>
+                : o
             ),
           }),
           false,
@@ -2002,7 +2002,7 @@ export const useUIStore = create&lt;UIState&gt;()(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T03:07:35.070Z
+                at 2025-11-30T04:02:45.425Z
             </div>
         <script src="../prettify.js"></script>
         <script>
