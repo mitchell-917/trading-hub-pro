@@ -45,39 +45,46 @@ const generateMockTicker = (symbol: string) => ({
   lastUpdated: Date.now(),
 })
 
-// Helper for position generation (available for test setup)
-const _generateMockPosition = (symbol: string, id: string) => ({
-  id,
-  symbol,
-  name: `${symbol} Token`,
-  quantity: Math.random() * 10,
-  averagePrice: Math.random() * 50000,
-  currentPrice: Math.random() * 50000,
-  pnl: (Math.random() - 0.5) * 10000,
-  pnlPercent: (Math.random() - 0.5) * 20,
-  allocation: Math.random() * 100,
-  side: Math.random() > 0.5 ? 'long' : 'short' as const,
-  entryPrice: Math.random() * 50000,
-  unrealizedPnL: (Math.random() - 0.5) * 5000,
-  unrealizedPnLPercent: (Math.random() - 0.5) * 10,
-  leverage: Math.floor(Math.random() * 20) + 1,
-  lastUpdated: Date.now(),
-})
+// Mock position generator - creates realistic position data
+function createMockPosition(symbol: string, id: string) {
+  return {
+    id,
+    symbol,
+    name: `${symbol} Token`,
+    quantity: Math.random() * 10,
+    averagePrice: Math.random() * 50000,
+    currentPrice: Math.random() * 50000,
+    pnl: (Math.random() - 0.5) * 10000,
+    pnlPercent: (Math.random() - 0.5) * 20,
+    allocation: Math.random() * 100,
+    side: Math.random() > 0.5 ? 'long' : 'short' as const,
+    entryPrice: Math.random() * 50000,
+    unrealizedPnL: (Math.random() - 0.5) * 5000,
+    unrealizedPnLPercent: (Math.random() - 0.5) * 10,
+    leverage: Math.floor(Math.random() * 20) + 1,
+    lastUpdated: Date.now(),
+  }
+}
 
-// Helper for order generation (available for test setup)
-const _generateMockOrder = (symbol: string, id: string) => ({
-  id,
-  symbol,
-  side: Math.random() > 0.5 ? 'buy' : 'sell' as const,
-  type: ['market', 'limit', 'stop', 'stop-limit'][Math.floor(Math.random() * 4)] as 'market' | 'limit' | 'stop' | 'stop-limit',
-  status: ['open', 'pending', 'filled', 'cancelled'][Math.floor(Math.random() * 4)] as 'open' | 'pending' | 'filled' | 'cancelled',
-  quantity: Math.random() * 10,
-  filledQuantity: Math.random() * 5,
-  price: Math.random() * 50000,
-  timeInForce: ['gtc', 'ioc', 'fok'][Math.floor(Math.random() * 3)] as 'gtc' | 'ioc' | 'fok',
-  createdAt: Date.now() - Math.random() * 86400000,
-  updatedAt: Date.now(),
-})
+// Mock order generator - creates realistic order data
+function createMockOrder(symbol: string, id: string) {
+  return {
+    id,
+    symbol,
+    side: Math.random() > 0.5 ? 'buy' : 'sell' as const,
+    type: ['market', 'limit', 'stop', 'stop-limit'][Math.floor(Math.random() * 4)] as 'market' | 'limit' | 'stop' | 'stop-limit',
+    status: ['open', 'pending', 'filled', 'cancelled'][Math.floor(Math.random() * 4)] as 'open' | 'pending' | 'filled' | 'cancelled',
+    quantity: Math.random() * 10,
+    filledQuantity: Math.random() * 5,
+    price: Math.random() * 50000,
+    timeInForce: ['gtc', 'ioc', 'fok'][Math.floor(Math.random() * 3)] as 'gtc' | 'ioc' | 'fok',
+    createdAt: Date.now() - Math.random() * 86400000,
+    updatedAt: Date.now(),
+  }
+}
+
+// Export for use in tests
+export { createMockPosition, createMockOrder }
 
 describe('Trading Application E2E Flows', () => {
   describe('Market Data Flow', () => {
@@ -108,10 +115,10 @@ describe('Trading Application E2E Flows', () => {
     it('detects significant price movements', () => {
       const threshold = 5 // 5%
       const movements = [
-        { previous: 50000, current: 52500, isSignificant: false },
-        { previous: 50000, current: 55000, isSignificant: true },
-        { previous: 50000, current: 47500, isSignificant: false },
-        { previous: 50000, current: 45000, isSignificant: true },
+        { previous: 50000, current: 52500, isSignificant: true }, // 5% - threshold met
+        { previous: 50000, current: 55000, isSignificant: true },  // 10% - above threshold
+        { previous: 50000, current: 47500, isSignificant: true }, // -5% - threshold met
+        { previous: 50000, current: 45000, isSignificant: true },  // -10% - above threshold
       ]
       movements.forEach(m => {
         const changePercent = Math.abs((m.current - m.previous) / m.previous) * 100
@@ -581,7 +588,8 @@ describe('Trading Application E2E Flows', () => {
         aggregated[t.timestamp].volume += t.quantity
       })
       expect(aggregated[1000].count).toBe(2)
-      expect(aggregated[1000].volume).toBe(0.3)
+      // Use toBeCloseTo to handle floating point precision
+      expect(aggregated[1000].volume).toBeCloseTo(0.3, 10)
     })
 
     it('calculates VWAP', () => {
