@@ -14,6 +14,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { KeyboardShortcutsProvider } from '@/hooks/useKeyboardShortcuts'
 import { CurrencyProvider } from '@/context/CurrencyContext'
+import { MarketDataProvider } from '@/context/MarketDataContext'
 import './index.css'
 
 // Create React Query client
@@ -33,23 +34,25 @@ function App() {
     <ErrorBoundary showDetails>
       <QueryClientProvider client={queryClient}>
         <CurrencyProvider autoDetect>
-          <KeyboardShortcutsProvider>
-            <ToastProvider position="top-right">
-              <BrowserRouter>
-                <div className="app">
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/portfolio" element={<Portfolio />} />
-                      <Route path="/scanner" element={<MarketScanner />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Layout>
-                </div>
-              </BrowserRouter>
-            </ToastProvider>
-          </KeyboardShortcutsProvider>
+          <MarketDataProvider defaultSource="binance">
+            <KeyboardShortcutsProvider>
+              <ToastProvider position="top-right">
+                <BrowserRouter>
+                  <div className="app">
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/portfolio" element={<Portfolio />} />
+                        <Route path="/scanner" element={<MarketScanner />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </Layout>
+                  </div>
+                </BrowserRouter>
+              </ToastProvider>
+            </KeyboardShortcutsProvider>
+          </MarketDataProvider>
         </CurrencyProvider>
       </QueryClientProvider>
     </ErrorBoundary>
