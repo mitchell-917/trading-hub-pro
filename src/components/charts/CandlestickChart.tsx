@@ -16,7 +16,8 @@ import {
 } from 'recharts'
 import { format } from 'date-fns'
 import type { OHLCV } from '@/types'
-import { cn, formatCurrency, formatCompact } from '@/lib/utils'
+import { cn, formatCompact } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 
 interface CandlestickChartProps {
   data: OHLCV[]
@@ -37,9 +38,10 @@ interface CandleData extends OHLCV {
 interface CandleTooltipProps {
   active?: boolean
   payload?: Array<{ payload: CandleData }>
+  formatPrice: (value: number, decimals?: number) => string
 }
 
-function CandleChartTooltip({ active, payload }: CandleTooltipProps) {
+function CandleChartTooltip({ active, payload, formatPrice }: CandleTooltipProps) {
   if (!active || !payload || !payload.length) return null
 
   const candle = payload[0].payload
@@ -51,17 +53,17 @@ function CandleChartTooltip({ active, payload }: CandleTooltipProps) {
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
         <div className="text-gray-400">Open:</div>
-        <div className="text-right number-mono">{formatCurrency(candle.open)}</div>
+        <div className="text-right number-mono">{formatPrice(candle.open)}</div>
         <div className="text-gray-400">High:</div>
-        <div className="text-right number-mono text-emerald-400">{formatCurrency(candle.high)}</div>
+        <div className="text-right number-mono text-emerald-400">{formatPrice(candle.high)}</div>
         <div className="text-gray-400">Low:</div>
-        <div className="text-right number-mono text-red-400">{formatCurrency(candle.low)}</div>
+        <div className="text-right number-mono text-red-400">{formatPrice(candle.low)}</div>
         <div className="text-gray-400">Close:</div>
         <div className={cn(
           'text-right number-mono font-medium',
           candle.close >= candle.open ? 'text-emerald-400' : 'text-red-400'
         )}>
-          {formatCurrency(candle.close)}
+          {formatPrice(candle.close)}
         </div>
         <div className="text-gray-400">Volume:</div>
         <div className="text-right number-mono">{formatCompact(candle.volume)}</div>
@@ -77,6 +79,8 @@ export function CandlestickChart({
   showGrid = true,
   className,
 }: CandlestickChartProps) {
+  const { formatPrice } = useCurrency()
+
   const chartData = useMemo(() => {
     return data.map((candle) => {
       const isBullish = candle.close >= candle.open
@@ -114,9 +118,9 @@ export function CandlestickChart({
   }, [data])
 
   // Memoized tooltip renderer
-  const renderTooltip = useCallback((props: CandleTooltipProps) => {
-    return <CandleChartTooltip {...props} />
-  }, [])
+  const renderTooltip = useCallback((props: Omit<CandleTooltipProps, 'formatPrice'>) => {
+    return <CandleChartTooltip {...props} formatPrice={formatPrice} />
+  }, [formatPrice])
 
   if (data.length === 0) {
     return (
@@ -157,7 +161,7 @@ export function CandlestickChart({
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6b7280', fontSize: 11 }}
-            tickFormatter={(value) => formatCurrency(value)}
+            tickFormatter={(value) => formatPrice(value)}
             width={80}
           />
 
