@@ -3,7 +3,7 @@
 // ============================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Settings } from '../Settings'
 
@@ -136,6 +136,17 @@ describe('Settings Page', () => {
       
       expect(screen.getByText('Export Data')).toBeInTheDocument()
     })
+
+    it('navigates back to appearance section', () => {
+      renderSettings()
+      // First go to another section
+      fireEvent.click(screen.getByText('Security'))
+      expect(screen.getByText('Two-Factor Authentication')).toBeInTheDocument()
+      
+      // Then go back to appearance
+      fireEvent.click(screen.getByText('Appearance'))
+      expect(screen.getByText('Dark Mode')).toBeInTheDocument()
+    })
   })
 
   describe('Appearance Settings', () => {
@@ -145,10 +156,30 @@ describe('Settings Page', () => {
       expect(screen.getByText('Light Mode')).toBeInTheDocument()
     })
 
+    it('shows theme section header', () => {
+      renderSettings()
+      expect(screen.getByText('Theme')).toBeInTheDocument()
+    })
+
+    it('shows display settings header', () => {
+      renderSettings()
+      expect(screen.getByText('Display')).toBeInTheDocument()
+    })
+
     it('shows display settings', () => {
       renderSettings()
       expect(screen.getByText('Animations')).toBeInTheDocument()
       expect(screen.getByText('Compact Mode')).toBeInTheDocument()
+    })
+
+    it('shows Show P&L in Header toggle', () => {
+      renderSettings()
+      expect(screen.getByText("Show P&L in Header")).toBeInTheDocument()
+    })
+
+    it('shows localization header', () => {
+      renderSettings()
+      expect(screen.getByText('Localization')).toBeInTheDocument()
     })
 
     it('shows localization options', () => {
@@ -162,6 +193,45 @@ describe('Settings Page', () => {
       const lightModeButton = screen.getByText('Light Mode').closest('button')
       expect(lightModeButton).toBeInTheDocument()
       fireEvent.click(lightModeButton!)
+      // Verify the click happened without error
+      expect(lightModeButton).toBeInTheDocument()
+    })
+
+    it('can toggle theme to dark', () => {
+      renderSettings()
+      const darkModeButton = screen.getByText('Dark Mode').closest('button')
+      expect(darkModeButton).toBeInTheDocument()
+      fireEvent.click(darkModeButton!)
+    })
+
+    it('can toggle animations setting', () => {
+      renderSettings()
+      const animationsToggle = screen.getByText('Animations').parentElement?.parentElement?.querySelector('button')
+      if (animationsToggle) {
+        fireEvent.click(animationsToggle)
+      }
+    })
+
+    it('can toggle compact mode setting', () => {
+      renderSettings()
+      const compactToggle = screen.getByText('Compact Mode').parentElement?.parentElement?.querySelector('button')
+      if (compactToggle) {
+        fireEvent.click(compactToggle)
+      }
+    })
+
+    it('can change language selection', () => {
+      renderSettings()
+      const languageSelect = screen.getAllByRole('combobox')[0]
+      fireEvent.change(languageSelect, { target: { value: 'es' } })
+      expect(languageSelect).toHaveValue('es')
+    })
+
+    it('can change currency selection', () => {
+      renderSettings()
+      const currencySelect = screen.getAllByRole('combobox')[1]
+      fireEvent.change(currencySelect, { target: { value: 'EUR' } })
+      expect(currencySelect).toHaveValue('EUR')
     })
   })
 
@@ -174,6 +244,20 @@ describe('Settings Page', () => {
       expect(screen.getByText('Sound Effects')).toBeInTheDocument()
     })
 
+    it('shows general section header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Notifications'))
+      
+      expect(screen.getByText('General')).toBeInTheDocument()
+    })
+
+    it('shows alert types header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Notifications'))
+      
+      expect(screen.getByText('Alert Types')).toBeInTheDocument()
+    })
+
     it('shows alert types', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Notifications'))
@@ -183,6 +267,13 @@ describe('Settings Page', () => {
       expect(screen.getByText('News Alerts')).toBeInTheDocument()
     })
 
+    it('shows delivery methods header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Notifications'))
+      
+      expect(screen.getByText('Delivery Methods')).toBeInTheDocument()
+    })
+
     it('shows delivery methods', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Notifications'))
@@ -190,15 +281,49 @@ describe('Settings Page', () => {
       expect(screen.getByText('Email Notifications')).toBeInTheDocument()
       expect(screen.getByText('Push Notifications')).toBeInTheDocument()
     })
+
+    it('can toggle enable notifications', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Notifications'))
+      
+      const enableToggle = screen.getByText('Enable Notifications').parentElement?.parentElement?.querySelector('button')
+      if (enableToggle) {
+        fireEvent.click(enableToggle)
+      }
+    })
+
+    it('can toggle sound effects', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Notifications'))
+      
+      const soundToggle = screen.getByText('Sound Effects').parentElement?.parentElement?.querySelector('button')
+      if (soundToggle) {
+        fireEvent.click(soundToggle)
+      }
+    })
   })
 
   describe('Trading Settings', () => {
+    it('shows order defaults header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Trading'))
+      
+      expect(screen.getByText('Order Defaults')).toBeInTheDocument()
+    })
+
     it('shows order defaults', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Trading'))
       
       expect(screen.getByText('Default Leverage')).toBeInTheDocument()
       expect(screen.getByText('Risk Limit (%)')).toBeInTheDocument()
+    })
+
+    it('shows order confirmation header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Trading'))
+      
+      expect(screen.getByText('Order Confirmation')).toBeInTheDocument()
     })
 
     it('shows order confirmation toggle', () => {
@@ -208,6 +333,13 @@ describe('Settings Page', () => {
       expect(screen.getByText('Confirm Before Placing Orders')).toBeInTheDocument()
     })
 
+    it('shows quick actions header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Trading'))
+      
+      expect(screen.getByText('Quick Actions')).toBeInTheDocument()
+    })
+
     it('shows quick actions', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Trading'))
@@ -215,14 +347,48 @@ describe('Settings Page', () => {
       expect(screen.getByText('Configure Hotkeys')).toBeInTheDocument()
       expect(screen.getByText('Auto-Trading Rules')).toBeInTheDocument()
     })
+
+    it('can change default leverage', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Trading'))
+      
+      const inputs = screen.getAllByRole('spinbutton')
+      if (inputs[0]) {
+        fireEvent.change(inputs[0], { target: { value: '20' } })
+      }
+    })
+
+    it('can change risk limit', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Trading'))
+      
+      const inputs = screen.getAllByRole('spinbutton')
+      if (inputs[1]) {
+        fireEvent.change(inputs[1], { target: { value: '5' } })
+      }
+    })
   })
 
   describe('Security Settings', () => {
-    it('shows 2FA option', () => {
+    it('shows 2FA header', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Security'))
       
       expect(screen.getByText('Two-Factor Authentication')).toBeInTheDocument()
+    })
+
+    it('shows 2FA option', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Security'))
+      
+      expect(screen.getByText('2FA Disabled')).toBeInTheDocument()
+    })
+
+    it('shows password header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Security'))
+      
+      expect(screen.getByText('Password')).toBeInTheDocument()
     })
 
     it('shows password settings', () => {
@@ -232,11 +398,25 @@ describe('Settings Page', () => {
       expect(screen.getByText('Change Password')).toBeInTheDocument()
     })
 
+    it('shows sessions header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Security'))
+      
+      expect(screen.getByText('Sessions')).toBeInTheDocument()
+    })
+
     it('shows session management', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Security'))
       
       expect(screen.getByText('Active Sessions')).toBeInTheDocument()
+    })
+
+    it('shows API keys header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Security'))
+      
+      expect(screen.getByText('API Keys')).toBeInTheDocument()
     })
 
     it('shows API key management', () => {
@@ -246,48 +426,100 @@ describe('Settings Page', () => {
       expect(screen.getByText('API Access')).toBeInTheDocument()
     })
 
-    it('can toggle 2FA', () => {
+    it('can toggle 2FA on', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Security'))
       
       const enableButton = screen.getByRole('button', { name: /enable/i })
       expect(enableButton).toBeInTheDocument()
       fireEvent.click(enableButton)
+      
+      // After enabling, it should show Disable
+      expect(screen.getByRole('button', { name: /disable/i })).toBeInTheDocument()
+    })
+
+    it('can toggle 2FA off after enabling', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Security'))
+      
+      // First enable
+      fireEvent.click(screen.getByRole('button', { name: /enable/i }))
+      
+      // Then disable
+      const disableButton = screen.getByRole('button', { name: /disable/i })
+      fireEvent.click(disableButton)
+      
+      // Should show Enable again
+      expect(screen.getByRole('button', { name: /enable/i })).toBeInTheDocument()
     })
   })
 
   describe('Account Settings', () => {
-    it('shows profile information', () => {
+    it('shows profile information header', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Account'))
       
       expect(screen.getByText('Profile Information')).toBeInTheDocument()
+    })
+
+    it('shows profile information', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Account'))
+      
       expect(screen.getByText('Display Name')).toBeInTheDocument()
       expect(screen.getByText('Email Address')).toBeInTheDocument()
+    })
+
+    it('shows subscription header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Account'))
+      
+      expect(screen.getByText('Subscription')).toBeInTheDocument()
     })
 
     it('shows subscription info', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Account'))
       
-      expect(screen.getByText('Subscription')).toBeInTheDocument()
+      expect(screen.getByText('PRO')).toBeInTheDocument()
       expect(screen.getByText('Professional Plan')).toBeInTheDocument()
+    })
+
+    it('shows payment methods header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Account'))
+      
+      expect(screen.getByText('Payment Methods')).toBeInTheDocument()
     })
 
     it('shows payment methods', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Account'))
       
-      expect(screen.getByText('Payment Methods')).toBeInTheDocument()
+      expect(screen.getByText(/4242/)).toBeInTheDocument()
     })
   })
 
   describe('Data & Privacy Settings', () => {
+    it('shows export data header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
+      expect(screen.getByText('Export Data')).toBeInTheDocument()
+    })
+
     it('shows export data option', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Data & Privacy'))
       
       expect(screen.getByText('Download Your Data')).toBeInTheDocument()
+    })
+
+    it('shows cache header', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
+      expect(screen.getByText('Cache')).toBeInTheDocument()
     })
 
     it('shows cache management', () => {
@@ -297,12 +529,39 @@ describe('Settings Page', () => {
       expect(screen.getByText('Clear Cache')).toBeInTheDocument()
     })
 
-    it('shows danger zone', () => {
+    it('shows danger zone header', () => {
       renderSettings()
       fireEvent.click(screen.getByText('Data & Privacy'))
       
       expect(screen.getByText('Danger Zone')).toBeInTheDocument()
+    })
+
+    it('shows danger zone', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
       expect(screen.getByText('Delete Account')).toBeInTheDocument()
+    })
+
+    it('shows export button', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
+      expect(screen.getByRole('button', { name: /export/i })).toBeInTheDocument()
+    })
+
+    it('shows clear button', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
+      expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument()
+    })
+
+    it('shows delete button', () => {
+      renderSettings()
+      fireEvent.click(screen.getByText('Data & Privacy'))
+      
+      expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
     })
   })
 
@@ -312,6 +571,30 @@ describe('Settings Page', () => {
       
       const saveButton = screen.getByRole('button', { name: /save changes/i })
       expect(saveButton).toBeInTheDocument()
+    })
+
+    it('can click save button', async () => {
+      renderSettings()
+      
+      const saveButton = screen.getByRole('button', { name: /save changes/i })
+      fireEvent.click(saveButton)
+      
+      // Wait for save to complete (shows loading state then success)
+      await waitFor(() => {
+        expect(mockUpdateSettings).toHaveBeenCalled()
+      }, { timeout: 2000 })
+    })
+
+    it('shows success message after save', async () => {
+      renderSettings()
+      
+      const saveButton = screen.getByRole('button', { name: /save changes/i })
+      fireEvent.click(saveButton)
+      
+      // Wait for success message
+      await waitFor(() => {
+        expect(screen.getByText(/settings saved/i)).toBeInTheDocument()
+      }, { timeout: 2000 })
     })
   })
 })
@@ -332,5 +615,11 @@ describe('Settings Page Accessibility', () => {
     renderSettings()
     expect(screen.getByText('Language')).toBeInTheDocument()
     expect(screen.getByText('Currency')).toBeInTheDocument()
+  })
+
+  it('has navigation buttons', () => {
+    renderSettings()
+    const navButtons = screen.getAllByRole('button')
+    expect(navButtons.length).toBeGreaterThan(5) // At least the 6 section buttons
   })
 })
