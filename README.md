@@ -76,6 +76,25 @@
 - **🔔 Toast Notifications** – Real-time alerts for important events
 - **⚠️ Error Boundaries** – Graceful error handling throughout
 
+### 🌍 Global Currency Support
+- **Auto-Detection** – Automatically detects user's local currency based on geolocation
+- **20+ Currencies** – Support for USD, EUR, GBP, JPY, AUD, CAD, CHF, and more
+- **Live Conversion** – All prices shown in your preferred currency
+- **Easy Switching** – Change currency anytime from settings
+
+### 📊 Advanced Trading Widgets
+- **Trading Signals** – AI-powered signals with confidence scores and entry/exit levels
+- **Market Heatmap** – Visual overview of market performance across all assets
+- **Risk Management** – Portfolio risk analysis with VaR, exposure, and margin tracking
+- **Market Depth** – Real-time order book visualization with depth charts
+
+### 💹 Real Market Data APIs
+- **Binance API** – Live cryptocurrency prices and trading data
+- **CoinGecko API** – Market cap, volume, and coin information
+- **Alpha Vantage** – Stock market quotes and historical data
+- **Exchange Rate API** – Live forex rates for currency conversion
+- **WebSocket Streaming** – Real-time price updates via WebSocket
+
 ---
 
 ## 🚀 Quick Start
