@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import '@testing-library/jest-dom'
-import type { ReactNode } from 'react'
 
 // Mock the stores
 const mockTradingStore = {
@@ -79,11 +78,6 @@ vi.mock('../lib/store', () => ({
     addNotification: vi.fn(),
   })),
 }))
-
-// Test wrapper for providers (used for context-based tests)
-const _TestWrapper = ({ children }: { children: ReactNode }) => {
-  return <>{children}</>
-}
 
 describe('Dashboard Layout Tests', () => {
   beforeEach(() => {
