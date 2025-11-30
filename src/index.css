@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+/* ============================================
+   TradingHub Pro - Premium Trading Theme
+   ============================================ */
+
+/* Custom CSS Variables */
+:root {
+  --color-profit: #00d26a;
+  --color-loss: #ff4757;
+  --color-neutral: #ffd93d;
+  
+  --color-bg-primary: #0a0f1a;
+  --color-bg-secondary: #111827;
+  --color-bg-tertiary: #1f2937;
+  --color-bg-card: rgba(17, 24, 39, 0.8);
+  --color-bg-hover: rgba(55, 65, 81, 0.5);
+  
+  --color-border: rgba(75, 85, 99, 0.4);
+  --color-border-active: rgba(99, 102, 241, 0.5);
+  
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  
+  --glow-profit: 0 0 20px rgba(0, 210, 106, 0.3);
+  --glow-loss: 0 0 20px rgba(255, 71, 87, 0.3);
+  --glow-accent: 0 0 30px rgba(99, 102, 241, 0.4);
+  
+  --glassmorphism: saturate(180%) blur(10px);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  font-variation-settings: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Selection */
+::selection {
+  background: var(--color-accent);
+  color: white;
+}
+
+/* Utility Classes */
+.text-profit {
+  color: var(--color-profit);
+}
+
+.text-loss {
+  color: var(--color-loss);
+}
+
+.text-neutral {
+  color: var(--color-neutral);
+}
+
+.bg-profit {
+  background-color: var(--color-profit);
+}
+
+.bg-loss {
+  background-color: var(--color-loss);
+}
+
+.glow-profit {
+  box-shadow: var(--glow-profit);
+}
+
+.glow-loss {
+  box-shadow: var(--glow-loss);
+}
+
+.glow-accent {
+  box-shadow: var(--glow-accent);
+}
+
+/* Glassmorphism Card */
+.glass-card {
+  background: var(--color-bg-card);
+  backdrop-filter: var(--glassmorphism);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+}
+
+.glass-card-hover:hover {
+  border-color: var(--color-border-active);
+  box-shadow: var(--glow-accent);
+}
+
+/* Gradient Backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-profit {
+  background: linear-gradient(135deg, #00d26a 0%, #00a854 100%);
+}
+
+.gradient-loss {
+  background: linear-gradient(135deg, #ff4757 0%, #c92a2a 100%);
+}
+
+.gradient-mesh {
+  background: 
+    radial-gradient(at 40% 20%, hsla(228, 74%, 48%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(189, 70%, 42%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(355, 70%, 50%, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, hsla(340, 70%, 50%, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(225, 70%, 50%, 0.1) 0px, transparent 50%),
+    var(--color-bg-primary);
+}
+
+/* Animation Keyframes */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-bg-hover) 50%,
+    var(--color-bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Chart Container */
+.chart-container {
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 60px 40px;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+/* Number Formatting */
+.number-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Button Styles */
+.btn-primary {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  box-shadow: var(--glow-accent);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Input Styles */
+.input-field {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.input-field::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    font-size: 13px;
+  }
+}
+
