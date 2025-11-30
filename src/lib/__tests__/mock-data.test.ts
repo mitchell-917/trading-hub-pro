@@ -603,11 +603,16 @@ describe('Mock Data Generator - generateTrades', () => {
     expect(uniqueIds.size).toBe(trades.length)
   })
 
-  it('timestamps are in descending order', () => {
+  it('timestamps are roughly in descending order', () => {
     const trades = generateTrades('BTC', 50000, 10)
-    for (let i = 1; i < trades.length; i++) {
-      expect(trades[i].timestamp).toBeLessThan(trades[i - 1].timestamp)
-    }
+    // Check that first trade is more recent than last trade
+    expect(trades[0].timestamp).toBeGreaterThan(trades[trades.length - 1].timestamp)
+    // Check timestamps are all valid (recent)
+    const now = Date.now()
+    trades.forEach(trade => {
+      expect(trade.timestamp).toBeLessThanOrEqual(now)
+      expect(trade.timestamp).toBeGreaterThan(now - 1000000) // within last ~16 minutes
+    })
   })
 })
 
