@@ -21,7 +21,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useTrading } from '@/hooks/useTrading'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { OrderSide, OrderType } from '@/types'
 
 interface OrderPanelProps {
@@ -37,6 +38,7 @@ export function OrderPanel({
 }: OrderPanelProps) {
   const storeSymbol = useTradingStore((s) => s.selectedSymbol)
   const symbol = propSymbol || storeSymbol
+  const { formatPrice, currency } = useCurrency()
 
   const [side, setSide] = useState<OrderSide>('buy')
   const [orderType, setOrderType] = useState<OrderType>('limit')
@@ -164,7 +166,7 @@ export function OrderPanel({
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder={currentPrice.toFixed(2)}
-              leftIcon={<span className="text-gray-400 text-sm">$</span>}
+              leftIcon={<span className="text-gray-400 text-sm">{currency.symbol}</span>}
               className="number-mono"
             />
           </div>
@@ -184,7 +186,7 @@ export function OrderPanel({
               value={stopPrice}
               onChange={(e) => setStopPrice(e.target.value)}
               placeholder="0.00"
-              leftIcon={<span className="text-gray-400 text-sm">$</span>}
+              leftIcon={<span className="text-gray-400 text-sm">{currency.symbol}</span>}
               className="number-mono"
             />
           </div>
@@ -266,13 +268,13 @@ export function OrderPanel({
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Order Value</span>
             <span className="number-mono font-medium">
-              {formatCurrency(orderValue)}
+              {formatPrice(orderValue)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Buying Power</span>
             <span className="number-mono text-gray-300">
-              {formatCurrency(buyingPower)}
+              {formatPrice(buyingPower)}
             </span>
           </div>
           {percentOfBuyingPower > 0 && (
