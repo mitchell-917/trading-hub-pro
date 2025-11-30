@@ -25,12 +25,15 @@ import {
   Trash2,
   Download,
   Check,
+  Globe,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
+import { CurrencySelector } from '@/components/ui/CurrencySelector'
 import { useTradingStore } from '@/lib/store'
+import { useCurrency } from '@/context/CurrencyContext'
 import { cn } from '@/lib/utils'
 
 // Settings section types
@@ -72,6 +75,7 @@ export function Settings() {
   
   const settings = useTradingStore((s) => s.settings)
   const updateSettings = useTradingStore((s) => s.updateSettings)
+  const { currency, isAutoDetected } = useCurrency()
   
   // Local state for unsaved changes
   const [localSettings, setLocalSettings] = useState({
@@ -178,7 +182,7 @@ export function Settings() {
 
             <div className="border-t border-gray-800 pt-6">
               <h3 className="text-lg font-semibold mb-4">Localization</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <label className="text-sm text-gray-400 mb-2 block">Language</label>
                   <select 
@@ -195,18 +199,17 @@ export function Settings() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Currency</label>
-                  <select 
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2"
-                    value={localSettings.currency}
-                    onChange={(e) => setLocalSettings({ ...localSettings, currency: e.target.value })}
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="JPY">JPY (¥)</option>
-                    <option value="BTC">BTC (₿)</option>
-                  </select>
+                  <label className="text-sm text-gray-400 mb-2 flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Currency
+                    {isAutoDetected && (
+                      <Badge color="blue" size="sm">Auto-detected</Badge>
+                    )}
+                  </label>
+                  <CurrencySelector showLabel={false} />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Current: {currency.name} ({currency.code}) - {currency.symbol}
+                  </p>
                 </div>
               </div>
             </div>
