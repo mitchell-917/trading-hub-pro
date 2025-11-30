@@ -21,7 +21,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatNumber, cn } from '@/lib/utils'
+import { formatNumber, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Order, OrderStatus } from '@/types'
 
 interface TradeHistoryProps {
@@ -36,6 +37,7 @@ export function TradeHistory({
   className,
 }: TradeHistoryProps) {
   const orders = useTradingStore((s) => s.orders)
+  const { formatPrice } = useCurrency()
   
   const [filter, setFilter] = useState<FilterType>('all')
   const [showAll, setShowAll] = useState(false)
@@ -188,7 +190,7 @@ export function TradeHistory({
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Total Volume</span>
             <span className="font-medium number-mono">
-              {formatCurrency(stats.totalVolume)}
+              {formatPrice(stats.totalVolume)}
             </span>
           </div>
         </div>
@@ -207,6 +209,7 @@ interface OrderRowProps {
 }
 
 function OrderRow({ order, index }: OrderRowProps) {
+  const { formatPrice } = useCurrency()
   const isBuy = order.side === 'buy'
 
   const statusConfig: Record<OrderStatus, { 
@@ -295,7 +298,7 @@ function OrderRow({ order, index }: OrderRowProps) {
           {formatNumber(order.quantity, 4)}
         </p>
         <p className="text-xs text-gray-400 number-mono">
-          @ {formatCurrency(order.price ?? 0)}
+          @ {formatPrice(order.price ?? 0)}
         </p>
       </div>
     </motion.div>
