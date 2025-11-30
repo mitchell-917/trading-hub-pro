@@ -3,7 +3,7 @@
 // Compact inline chart for watchlists/tables
 // ============================================
 
-import { useMemo } from 'react'
+import { useMemo, useId } from 'react'
 import {
   LineChart,
   Line,
@@ -79,6 +79,10 @@ export function Sparkline({
   void _fillColor
   void _trend
 
+  // Use React useId for deterministic unique gradient ID
+  const uniqueId = useId()
+  const gradientId = `sparkline-gradient-${uniqueId.replace(/:/g, '')}`
+
   if (data.length === 0) {
     return (
       <div
@@ -89,8 +93,6 @@ export function Sparkline({
       </div>
     )
   }
-
-  const gradientId = `sparkline-gradient-${Math.random().toString(36).slice(2, 9)}`
 
   return (
     <div className={cn('inline-block', className)} style={{ width, height }}>
