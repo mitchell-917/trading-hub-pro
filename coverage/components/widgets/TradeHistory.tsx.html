@@ -687,7 +687,7 @@ import {
   Clock,
   ChevronDown,
 } from 'lucide-react'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -715,9 +715,9 @@ export function TradeHistory({
   // Filter orders based on status
   const filteredOrders = useMemo(() =&gt; {
     <span class="missing-if-branch" title="else path not taken" >E</span>if (filter === 'all') return orders
-<span class="cstat-no" title="statement not covered" >    if (filter === 'filled') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>) =&gt; <span class="cstat-no" title="statement not covered" >o.status === 'filled')</span></span></span>
-<span class="cstat-no" title="statement not covered" >    if (filter === 'cancelled') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>) =&gt; <span class="cstat-no" title="statement not covered" >o.status === 'cancelled')</span></span></span>
-<span class="cstat-no" title="statement not covered" >    if (filter === 'pending') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>) =&gt; </span></span>
+<span class="cstat-no" title="statement not covered" >    if (filter === 'filled') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>: Order) =&gt; <span class="cstat-no" title="statement not covered" >o.status === 'filled')</span></span></span>
+<span class="cstat-no" title="statement not covered" >    if (filter === 'cancelled') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>: Order) =&gt; <span class="cstat-no" title="statement not covered" >o.status === 'cancelled')</span></span></span>
+<span class="cstat-no" title="statement not covered" >    if (filter === 'pending') <span class="cstat-no" title="statement not covered" >return orders.filter(<span class="fstat-no" title="function not covered" >(o</span>: Order) =&gt; </span></span>
 <span class="cstat-no" title="statement not covered" >      o.status === 'pending' || o.status === 'open'</span>
     )
 <span class="cstat-no" title="statement not covered" >    return orders</span>
@@ -725,11 +725,11 @@ export function TradeHistory({
 &nbsp;
   // Calculate stats
   const stats = useMemo(() =&gt; {
-    const filledOrders = orders.filter((o) =&gt; o.status === 'filled')
-    const buyOrders = filledOrders.filter((o) =&gt; o.side === 'buy')
-    const sellOrders = filledOrders.filter((o) =&gt; o.side === 'sell')
-    const totalVolume = filledOrders.reduce((sum, o) =&gt; 
-      sum + (o.quantity * (o.filledPrice || <span class="branch-1 cbranch-no" title="branch not covered" >o.price)), 0</span>
+    const filledOrders = orders.filter((o: Order) =&gt; o.status === 'filled')
+    const buyOrders = filledOrders.filter((o: Order) =&gt; o.side === 'buy')
+    const sellOrders = filledOrders.filter((o: Order) =&gt; o.side === 'sell')
+    const totalVolume = filledOrders.reduce((sum: number, o: Order) =&gt; 
+      sum + (o.quantity * (o.price ?? <span class="branch-1 cbranch-no" title="branch not covered" >0)), 0</span>
     )
 &nbsp;
     return {
@@ -767,7 +767,7 @@ export function TradeHistory({
             variant="ghost"
             size="sm"
             onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etIsFilterOpen(!isFilterOpen)}</span>
-            icon={&lt;Filter className="w-4 h-4" /&gt;}
+            leftIcon={&lt;Filter className="w-4 h-4" /&gt;}
           &gt;
             {filterOptions.find((f) =&gt; f.value === filter)?.label}
             &lt;ChevronDown className="w-3 h-3 ml-1" /&gt;
@@ -905,15 +905,15 @@ function OrderRow({ order, index }: OrderRowProps) {
       color: 'blue', 
       label: 'Open' 
     },
+    'partially-filled': { 
+      icon: &lt;Clock className="w-3 h-3" /&gt;, 
+      color: 'yellow', 
+      label: 'Partial' 
+    },
     rejected: { 
       icon: &lt;XCircle className="w-3 h-3" /&gt;, 
       color: 'red', 
       label: 'Rejected' 
-    },
-    expired: { 
-      icon: &lt;XCircle className="w-3 h-3" /&gt;, 
-      color: 'gray', 
-      label: 'Expired' 
     },
   }
 &nbsp;
@@ -966,7 +966,7 @@ function OrderRow({ order, index }: OrderRowProps) {
           {formatNumber(order.quantity, 4)}
         &lt;/p&gt;
         &lt;p className="text-xs text-gray-400 number-mono"&gt;
-          @ {formatCurrency(order.filledPrice || <span class="branch-1 cbranch-no" title="branch not covered" >order.price)</span>}
+          @ {formatCurrency(order.price ?? <span class="branch-1 cbranch-no" title="branch not covered" >0)</span>}
         &lt;/p&gt;
       &lt;/div&gt;
     &lt;/motion.div&gt;
@@ -979,7 +979,7 @@ function OrderRow({ order, index }: OrderRowProps) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T00:51:35.677Z
+                at 2025-11-30T03:07:35.070Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

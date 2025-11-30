@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>33/33</span>
+                <span class='fraction'>36/36</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>32/32</span>
+                <span class='fraction'>35/35</span>
             </div>
         
             
@@ -318,7 +318,13 @@
 <a name='L253'></a><a href='#L253'>253</a>
 <a name='L254'></a><a href='#L254'>254</a>
 <a name='L255'></a><a href='#L255'>255</a>
-<a name='L256'></a><a href='#L256'>256</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -395,6 +401,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -405,8 +419,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -578,7 +590,7 @@
 // Compact inline chart for watchlists/tables
 // ============================================
 &nbsp;
-import { useMemo } from 'react'
+import { useMemo, useId } from 'react'
 import {
   LineChart,
   Line,
@@ -610,9 +622,9 @@ export function Sparkline({
     return data.map((value, index) =&gt; ({ index, value }))
   }, [data])
 &nbsp;
-  const { strokeColor, fillColor, trend } = useMemo(() =&gt; {
+  const { strokeColor, _fillColor, _trend } = useMemo(() =&gt; {
     if (data.length &lt; 2) {
-      return { strokeColor: '#6366f1', fillColor: 'rgba(99, 102, 241, 0.2)', trend: 0 }
+      return { strokeColor: '#6366f1', _fillColor: 'rgba(99, 102, 241, 0.2)', _trend: 0 }
     }
 &nbsp;
     const firstValue = data[0]
@@ -623,14 +635,14 @@ export function Sparkline({
       if (calculatedTrend &gt; 0) {
         return {
           strokeColor: '#00d26a',
-          fillColor: 'rgba(0, 210, 106, 0.2)',
-          trend: calculatedTrend,
+          _fillColor: 'rgba(0, 210, 106, 0.2)',
+          _trend: calculatedTrend,
         }
       <span class="missing-if-branch" title="else path not taken" >E</span>} else if (calculatedTrend &lt; 0) {
         return {
           strokeColor: '#ff4757',
-          fillColor: 'rgba(255, 71, 87, 0.2)',
-          trend: calculatedTrend,
+          _fillColor: 'rgba(255, 71, 87, 0.2)',
+          _trend: calculatedTrend,
         }
       }
     }
@@ -645,10 +657,18 @@ export function Sparkline({
 &nbsp;
     return {
       strokeColor: colorMap[color].stroke,
-      fillColor: colorMap[color].fill,
-      trend: calculatedTrend,
+      _fillColor: colorMap[color].fill,
+      _trend: calculatedTrend,
     }
   }, [data, color])
+  
+  // Suppress unused variable warnings
+  void _fillColor
+  void _trend
+&nbsp;
+  // Use React useId for deterministic unique gradient ID
+  const uniqueId = useId()
+  const gradientId = `sparkline-gradient-${uniqueId.replace(/:/g, '')}`
 &nbsp;
   if (data.length === 0) {
     return (
@@ -660,8 +680,6 @@ export function Sparkline({
       &lt;/div&gt;
     )
   }
-&nbsp;
-  const gradientId = `sparkline-gradient-${Math.random().toString(36).slice(2, 9)}`
 &nbsp;
   return (
     &lt;div className={cn('inline-block', className)} style={{ width, height }}&gt;
@@ -835,7 +853,7 @@ export function PriceChange({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T00:51:35.677Z
+                at 2025-11-30T03:07:35.070Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

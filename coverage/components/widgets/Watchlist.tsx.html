@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.55% </span>
+                <span class="strong">54.23% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>30/54</span>
+                <span class='fraction'>32/59</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.33% </span>
+                <span class="strong">57.69% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>14/24</span>
+                <span class='fraction'>15/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">51.06% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>24/47</span>
+                <span class='fraction'>25/50</span>
             </div>
         
             
@@ -345,8 +345,11 @@
 <a name='L280'></a><a href='#L280'>280</a>
 <a name='L281'></a><a href='#L281'>281</a>
 <a name='L282'></a><a href='#L282'>282</a>
-<a name='L283'></a><a href='#L283'>283</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -402,6 +405,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">125x</span>
 <span class="cline-any cline-yes">117x</span>
@@ -523,16 +527,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -542,7 +550,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -638,9 +646,7 @@ import {
   Star, 
   Plus, 
   Search, 
-  X, 
-  TrendingUp, 
-  TrendingDown,
+  X,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react'
@@ -652,6 +658,7 @@ import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
 import { useMarketData } from '@/hooks/useMarketData'
 import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import type { WatchlistItem } from '@/types'
 &nbsp;
 interface WatchlistProps {
   onSelectSymbol?: (symbol: string) =&gt; void
@@ -684,8 +691,9 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
 &nbsp;
   const filteredSymbols = useMemo(() =&gt; {
     const query = searchQuery.toLowerCase()
+    const watchlistSymbols = watchlist.map((item: WatchlistItem) =&gt; item.symbol)
     return AVAILABLE_SYMBOLS
-      .filter((s) =&gt; !watchlist.includes(s))
+      .filter((s) =&gt; !watchlistSymbols.includes(s))
       .filter((s) =&gt; s.toLowerCase().includes(query))
   }, [searchQuery, watchlist])
 &nbsp;
@@ -701,7 +709,7 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
           &lt;Button
             variant="ghost"
             size="sm"
-            icon={&lt;Plus className="w-4 h-4" /&gt;}
+            leftIcon={&lt;Plus className="w-4 h-4" /&gt;}
             onClick={() =&gt; setIsAddModalOpen(true)}
           &gt;
             Add
@@ -725,14 +733,14 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
         ) : (
           &lt;div className="space-y-1"&gt;
             &lt;AnimatePresence mode="popLayout"&gt;
-              {watchlist.map((symbol, index) =&gt; (
-                &lt;WatchlistItem
-                  key={symbol}
-                  symbol={symbol}
-                  isSelected={symbol === selectedSymbol}
+              {watchlist.map((item: WatchlistItem, index: number) =&gt; (
+                &lt;WatchlistItemRow
+                  key={item.symbol}
+                  symbol={item.symbol}
+                  isSelected={item.symbol === selectedSymbol}
                   index={index}
-                  onSelect={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >h</span>andleSelectSymbol(symbol)}</span>
-                  onRemove={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >r</span>emoveFromWatchlist(symbol)}</span>
+                  onSelect={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >h</span>andleSelectSymbol(item.symbol)}</span>
+                  onRemove={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >r</span>emoveFromWatchlist(item.symbol)}</span>
                 /&gt;
               ))}
             &lt;/AnimatePresence&gt;
@@ -768,7 +776,7 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
                 &lt;button
                   key={symbol}
                   onClick={<span class="fstat-no" title="function not covered" >() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                    addToWatchlist(symbol)</span>
+<span class="cstat-no" title="statement not covered" >                    addToWatchlist({ symbol, name: symbol, addedAt: Date.now() })</span>
 <span class="cstat-no" title="statement not covered" >                    setIsAddModalOpen(false)</span>
 <span class="cstat-no" title="statement not covered" >                    setSearchQuery('')</span>
                   }}
@@ -787,10 +795,10 @@ export function Watchlist({ onSelectSymbol, className }: WatchlistProps) {
 }
 &nbsp;
 // ============================================
-// Watchlist Item Component
+// Watchlist Item Row Component
 // ============================================
 &nbsp;
-interface WatchlistItemProps {
+interface WatchlistItemRowProps {
   symbol: string
   isSelected: boolean
   index: number
@@ -798,31 +806,35 @@ interface WatchlistItemProps {
   onRemove: () =&gt; void
 }
 &nbsp;
-function WatchlistItem({ 
+function WatchlistItemRow({ 
   symbol, 
   isSelected, 
   index, 
   onSelect, 
   onRemove 
-}: WatchlistItemProps) {
+}: WatchlistItemRowProps) {
   const { ticker } = useMarketData(symbol)
   const [isHovered, setIsHovered] = useState(false)
 &nbsp;
-  const isPositive = (ticker?.priceChange24h ?? 0) &gt;= 0
+  const isPositive = (ticker?.change ?? 0) &gt;= 0
 &nbsp;
-  // Generate sparkline data
+  // Generate sparkline data - seeded based on symbol for deterministic values
   const sparklineData = useMemo(() =&gt; {
     <span class="missing-if-branch" title="else path not taken" >E</span>if (!ticker) return []
     const data: number[] = <span class="cstat-no" title="statement not covered" >[]</span>
     let price = <span class="cstat-no" title="statement not covered" >ticker.price * 0.98</span>
+    // Use symbol hash as seed for deterministic random values
+    const seed = <span class="cstat-no" title="statement not covered" >symbol.split('').reduce(<span class="fstat-no" title="function not covered" >(a</span>cc, char) =&gt; <span class="cstat-no" title="statement not covered" >acc + char.charCodeAt(0), 0</span>)</span>
 <span class="cstat-no" title="statement not covered" >    for (let i = <span class="cstat-no" title="statement not covered" >0; i</span> &lt; 24; i++) {</span>
-      const <span class="cstat-no" title="statement not covered" >change = (Math.random() - 0.48) * price * 0.01</span>
+      // Deterministic pseudo-random based on seed and index
+      const pseudoRandom = <span class="cstat-no" title="statement not covered" >Math.sin(seed * (i + 1)) * 0.5 + 0.5</span>
+      const <span class="cstat-no" title="statement not covered" >change = (pseudoRandom - 0.48) * price * 0.01</span>
 <span class="cstat-no" title="statement not covered" >      price += change</span>
 <span class="cstat-no" title="statement not covered" >      data.push(price)</span>
     }
 <span class="cstat-no" title="statement not covered" >    data.push(ticker.price)</span>
 <span class="cstat-no" title="statement not covered" >    return data</span>
-  }, [ticker])
+  }, [ticker, symbol])
 &nbsp;
   return (
     &lt;motion.div
@@ -858,8 +870,8 @@ function WatchlistItem({
           &lt;div className="text-left"&gt;
             &lt;p className="font-medium"&gt;{symbol}&lt;/p&gt;
             &lt;p className="text-xs text-gray-400"&gt;
-              Vol: {ticker?.volume24h 
-                ? <span class="branch-0 cbranch-no" title="branch not covered" >`${(ticker.volume24h / 1e6).toFixed(1)}M` </span>
+              Vol: {ticker?.volume 
+                ? <span class="branch-0 cbranch-no" title="branch not covered" >`${(ticker.volume / 1e6).toFixed(1)}M` </span>
                 : '-'}
             &lt;/p&gt;
           &lt;/div&gt;
@@ -884,7 +896,7 @@ function WatchlistItem({
               'text-xs number-mono',
               isPositive ? 'text-green-400' : <span class="branch-1 cbranch-no" title="branch not covered" >'text-red-400'</span>
             )}&gt;
-              {<span class="branch-0 cbranch-no" title="branch not covered" >ticker ? formatPercentage(ticker.priceChangePercent24h ?? 0) : '</span>-'}
+              {<span class="branch-0 cbranch-no" title="branch not covered" >ticker ? formatPercentage(ticker.changePercent ?? 0) : '</span>-'}
             &lt;/p&gt;
           &lt;/div&gt;
 &nbsp;
@@ -916,7 +928,7 @@ function WatchlistItem({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T00:51:35.677Z
+                at 2025-11-30T03:07:35.070Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
