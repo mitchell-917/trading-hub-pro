@@ -490,14 +490,17 @@ jobs:
           path: dist/
 
       - name: 📊 Analyze bundle sizes
+        shell: bash
         run: |
-          echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size | Gzipped |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|---------|" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Bundle Size Report"
+            echo ""
+            echo "| File | Size | Gzipped |"
+            echo "|------|------|---------|"
+          } >> $GITHUB_STEP_SUMMARY
           
           if [ -d dist/assets ]; then
-            for file in dist/assets/*.js dist/assets/*.css 2>/dev/null; do
+            for file in dist/assets/*.js dist/assets/*.css; do
               if [ -f "$file" ]; then
                 FILENAME=$(basename "$file")
                 SIZE=$(ls -lh "$file" | awk '{print $5}')
@@ -509,8 +512,11 @@ jobs:
             echo "No assets folder found" >> $GITHUB_STEP_SUMMARY
           fi
           
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📈 Total Bundle Stats" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "### Total Bundle Stats"
+          } >> $GITHUB_STEP_SUMMARY
+          
           if [ -d dist/assets ]; then
             TOTAL_JS=$(find dist/assets -name "*.js" -exec cat {} + 2>/dev/null | wc -c | numfmt --to=iec 2>/dev/null || echo "0")
             TOTAL_CSS=$(find dist/assets -name "*.css" -exec cat {} + 2>/dev/null | wc -c | numfmt --to=iec 2>/dev/null || echo "0")
