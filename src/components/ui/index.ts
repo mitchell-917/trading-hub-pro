@@ -20,6 +20,8 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs'
 
 export { Tooltip } from './Tooltip'
 
+export { CurrencySelector, CurrencyBadge } from './CurrencySelector'
+
 export {
   Skeleton,
   CardSkeleton,
