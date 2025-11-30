@@ -22,6 +22,8 @@ export { Tooltip } from './Tooltip'
 
 export { CurrencySelector, CurrencyBadge } from './CurrencySelector'
 
+export { PriceDisplay, TickerPrice, HeroPrice } from './PriceDisplay'
+
 export {
   Skeleton,
   CardSkeleton,
