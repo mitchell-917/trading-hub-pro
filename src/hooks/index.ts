@@ -44,3 +44,17 @@ export {
   useMarketIndices,
   useStockDailyHistory,
 } from './useStockData'
+export {
+  useForexPair,
+  useMajorForexPairs,
+  useForexHistory,
+  useCommodityPrices,
+  useGoldPrice,
+  useOilPrices,
+  useMetalPrices,
+  useCurrencyConverter,
+  useMultipleCurrencyRates,
+  useForexWatchlist,
+  useCryptoFiatRate,
+  useForexMarketMovers,
+} from './useForexData'
