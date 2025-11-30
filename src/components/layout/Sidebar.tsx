@@ -1,10 +1,11 @@
 // ============================================
 // TradingHub Pro - Sidebar Component
-// Navigation and quick actions
+// Navigation and quick actions with React Router
 // ============================================
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   LineChart,
@@ -18,6 +19,7 @@ import {
   Newspaper,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -32,38 +34,45 @@ interface SidebarProps {
 
 interface NavItem {
   id: string
+  path: string
   label: string
   icon: React.ReactNode
   badge?: number
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'charts', label: 'Charts', icon: <LineChart className="w-5 h-5" /> },
-  { id: 'portfolio', label: 'Portfolio', icon: <PieChart className="w-5 h-5" /> },
-  { id: 'watchlist', label: 'Watchlist', icon: <Star className="w-5 h-5" /> },
-  { id: 'ai-signals', label: 'AI Signals', icon: <Brain className="w-5 h-5" />, badge: 3 },
-  { id: 'history', label: 'Trade History', icon: <History className="w-5 h-5" /> },
+  { id: 'dashboard', path: '/', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { id: 'charts', path: '/charts', label: 'Charts', icon: <LineChart className="w-5 h-5" /> },
+  { id: 'portfolio', path: '/portfolio', label: 'Portfolio', icon: <PieChart className="w-5 h-5" /> },
+  { id: 'scanner', path: '/scanner', label: 'Market Scanner', icon: <Search className="w-5 h-5" /> },
+  { id: 'watchlist', path: '/watchlist', label: 'Watchlist', icon: <Star className="w-5 h-5" /> },
+  { id: 'ai-signals', path: '/ai-signals', label: 'AI Signals', icon: <Brain className="w-5 h-5" />, badge: 3 },
+  { id: 'history', path: '/history', label: 'Trade History', icon: <History className="w-5 h-5" /> },
 ]
 
 const secondaryItems: NavItem[] = [
-  { id: 'markets', label: 'Markets', icon: <TrendingUp className="w-5 h-5" /> },
-  { id: 'news', label: 'News', icon: <Newspaper className="w-5 h-5" /> },
-  { id: 'wallet', label: 'Wallet', icon: <Wallet className="w-5 h-5" /> },
+  { id: 'markets', path: '/markets', label: 'Markets', icon: <TrendingUp className="w-5 h-5" /> },
+  { id: 'news', path: '/news', label: 'News', icon: <Newspaper className="w-5 h-5" /> },
+  { id: 'wallet', path: '/wallet', label: 'Wallet', icon: <Wallet className="w-5 h-5" /> },
 ]
 
 export function Sidebar({
   isOpen = true,
   isCollapsed = false,
   onCollapse,
-  activeView = 'dashboard',
-  onViewChange,
   className,
 }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
 
-  const handleNavClick = (id: string) => {
-    onViewChange?.(id)
+  const handleNavClick = (path: string) => {
+    navigate(path)
+  }
+
+  const checkActive = (path: string) => {
+    if (path === '/') return location.pathname === '/'
+    return location.pathname.startsWith(path)
   }
 
   const sidebarVariants = {
@@ -92,10 +101,10 @@ export function Sidebar({
             <NavButton
               key={item.id}
               item={item}
-              isActive={activeView === item.id}
+              isActive={checkActive(item.path)}
               isCollapsed={isCollapsed}
               isHovered={hoveredItem === item.id}
-              onClick={() => handleNavClick(item.id)}
+              onClick={() => handleNavClick(item.path)}
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
             />
@@ -111,10 +120,10 @@ export function Sidebar({
             <NavButton
               key={item.id}
               item={item}
-              isActive={activeView === item.id}
+              isActive={checkActive(item.path)}
               isCollapsed={isCollapsed}
               isHovered={hoveredItem === item.id}
-              onClick={() => handleNavClick(item.id)}
+              onClick={() => handleNavClick(item.path)}
               onMouseEnter={() => setHoveredItem(item.id)}
               onMouseLeave={() => setHoveredItem(null)}
             />
@@ -143,11 +152,11 @@ export function Sidebar({
 
         {/* Settings */}
         <NavButton
-          item={{ id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> }}
-          isActive={activeView === 'settings'}
+          item={{ id: 'settings', path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> }}
+          isActive={checkActive('/settings')}
           isCollapsed={isCollapsed}
           isHovered={hoveredItem === 'settings'}
-          onClick={() => handleNavClick('settings')}
+          onClick={() => handleNavClick('/settings')}
           onMouseEnter={() => setHoveredItem('settings')}
           onMouseLeave={() => setHoveredItem(null)}
         />

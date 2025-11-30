@@ -85,7 +85,13 @@ export function TableRowSkeleton({ columns = 5 }: { columns?: number }) {
   )
 }
 
-// Chart Skeleton
+// Chart Skeleton - uses deterministic heights based on index
+function getBarHeight(index: number): string {
+  // Deterministic pseudo-random height based on index
+  const heights = [45, 72, 38, 65, 28, 80, 55, 42, 68, 35, 75, 48, 62, 30, 78, 52, 40, 70, 33, 58]
+  return `${heights[index % heights.length]}%`
+}
+
 export function ChartSkeleton({ height = 300 }: { height?: number }) {
   return (
     <div
@@ -106,7 +112,7 @@ export function ChartSkeleton({ height = 300 }: { height?: number }) {
             key={i}
             variant="rounded"
             className="flex-1"
-            height={`${Math.random() * 60 + 20}%`}
+            height={getBarHeight(i)}
           />
         ))}
       </div>
