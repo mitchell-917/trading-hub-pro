@@ -4,6 +4,12 @@
 // ============================================
 
 import { CRYPTO_MAPPINGS, type CryptoSymbol } from './config'
+import { WEBSOCKET_CONFIG, API_CONFIG } from '@/lib/config'
+import {
+  createAppError,
+  ErrorCodes,
+  logError,
+} from '@/lib/error-handling'
 
 export interface WebSocketTickerData {
   symbol: string
@@ -60,12 +66,16 @@ interface StreamCallbacks {
  * Binance WebSocket client for real-time streaming data
  */
 export class BinanceWebSocket {
-  private baseUrl = 'wss://stream.binance.com:9443/ws'
+  private baseUrl = API_CONFIG.BINANCE_WS_URL
   private connections: Map<string, WebSocket> = new Map()
   private callbacks: Map<string, StreamCallbacks> = new Map()
   private reconnectAttempts: Map<string, number> = new Map()
-  private maxReconnectAttempts = 5
-  private reconnectDelay = 3000
+  private maxReconnectAttempts = WEBSOCKET_CONFIG.MAX_RECONNECT_ATTEMPTS
+  private reconnectDelay = WEBSOCKET_CONFIG.RECONNECT_DELAY
+  private reconnectMultiplier = WEBSOCKET_CONFIG.RECONNECT_MULTIPLIER
+  private maxReconnectDelay = WEBSOCKET_CONFIG.MAX_RECONNECT_DELAY
+  private errorCallbacks: Map<string, ((error: Error) => void)> = new Map()
+  private connectionStateCallbacks: Map<string, ((connected: boolean) => void)> = new Map()
 
   /**
    * Get the Binance symbol for a crypto
@@ -204,6 +214,7 @@ export class BinanceWebSocket {
     ws.onopen = () => {
       console.log(`WebSocket connected: ${streamName}`)
       this.reconnectAttempts.set(streamName, 0)
+      this.notifyConnectionState(streamName, true)
     }
 
     ws.onmessage = (event) => {
@@ -211,18 +222,41 @@ export class BinanceWebSocket {
         const data = JSON.parse(event.data)
         this.handleMessage(streamName, data)
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error)
+        const appError = createAppError(
+          ErrorCodes.PARSE_ERROR,
+          'Error parsing WebSocket message',
+          'warning',
+          { streamName, error: String(error) }
+        )
+        logError(appError)
       }
     }
 
-    ws.onerror = (error) => {
-      console.error(`WebSocket error on ${streamName}:`, error)
+    ws.onerror = (event) => {
+      const appError = createAppError(
+        ErrorCodes.WEBSOCKET_ERROR,
+        `WebSocket error on ${streamName}`,
+        'warning',
+        { streamName, type: event.type }
+      )
+      logError(appError)
+      
+      // Notify registered error callbacks
+      const errorCallback = this.errorCallbacks.get(streamName)
+      if (errorCallback) {
+        errorCallback(new Error(appError.message))
+      }
     }
 
-    ws.onclose = () => {
-      console.log(`WebSocket closed: ${streamName}`)
+    ws.onclose = (event) => {
+      console.log(`WebSocket closed: ${streamName} (code: ${event.code})`)
       this.connections.delete(streamName)
-      this.attemptReconnect(streamName)
+      this.notifyConnectionState(streamName, false)
+      
+      // Only attempt reconnect for abnormal closures
+      if (event.code !== 1000 && event.code !== 1001) {
+        this.attemptReconnect(streamName)
+      }
     }
 
     this.connections.set(streamName, ws)
@@ -296,24 +330,61 @@ export class BinanceWebSocket {
   }
 
   /**
-   * Attempt to reconnect to a stream
+   * Attempt to reconnect to a stream with exponential backoff
    */
   private attemptReconnect(streamName: string): void {
     const attempts = this.reconnectAttempts.get(streamName) || 0
     
     if (attempts >= this.maxReconnectAttempts) {
-      console.error(`Max reconnect attempts reached for ${streamName}`)
+      const appError = createAppError(
+        ErrorCodes.WEBSOCKET_ERROR,
+        `Max reconnect attempts reached for ${streamName}`,
+        'error',
+        { streamName, attempts }
+      )
+      logError(appError)
       return
     }
 
     this.reconnectAttempts.set(streamName, attempts + 1)
     
+    // Exponential backoff with max delay cap
+    const delay = Math.min(
+      this.reconnectDelay * Math.pow(this.reconnectMultiplier, attempts),
+      this.maxReconnectDelay
+    )
+    
+    console.log(`Reconnecting ${streamName} in ${delay}ms (attempt ${attempts + 1}/${this.maxReconnectAttempts})`)
+    
     setTimeout(() => {
       if (this.callbacks.has(streamName)) {
-        console.log(`Attempting to reconnect ${streamName}... (attempt ${attempts + 1})`)
         this.connect(streamName)
       }
-    }, this.reconnectDelay * (attempts + 1))
+    }, delay)
+  }
+
+  /**
+   * Notify connection state change
+   */
+  private notifyConnectionState(streamName: string, connected: boolean): void {
+    const callback = this.connectionStateCallbacks.get(streamName)
+    if (callback) {
+      callback(connected)
+    }
+  }
+
+  /**
+   * Register error callback for a stream
+   */
+  onError(streamName: string, callback: (error: Error) => void): void {
+    this.errorCallbacks.set(streamName, callback)
+  }
+
+  /**
+   * Register connection state callback for a stream
+   */
+  onConnectionStateChange(streamName: string, callback: (connected: boolean) => void): void {
+    this.connectionStateCallbacks.set(streamName, callback)
   }
 
   /**
