@@ -1,6 +1,46 @@
 import '@testing-library/jest-dom'
-import { afterEach, vi } from 'vitest'
+import { afterEach, vi, beforeAll } from 'vitest'
 import { cleanup } from '@testing-library/react'
+
+// Suppress console warnings for SVG elements and chart dimensions in tests
+beforeAll(() => {
+  const originalConsoleError = console.error
+  const originalConsoleWarn = console.warn
+  
+  console.error = (...args: unknown[]) => {
+    const message = String(args[0])
+    
+    // Suppress SVG element warnings from jsdom
+    if (
+      message.includes('is unrecognized in this browser') ||
+      message.includes('is using incorrect casing') ||
+      message.includes('<linearGradient') ||
+      message.includes('<stop>') ||
+      message.includes('<defs>') ||
+      // Suppress chart dimension warnings from Recharts
+      (message.includes('width') && message.includes('height') && message.includes('should be greater than 0')) ||
+      // Suppress act() warnings for async state updates
+      message.includes('was not wrapped in act')
+    ) {
+      return
+    }
+    
+    originalConsoleError.apply(console, args)
+  }
+  
+  console.warn = (...args: unknown[]) => {
+    const message = String(args[0])
+    
+    // Suppress chart dimension warnings
+    if (
+      (message.includes('width') && message.includes('height') && message.includes('should be greater than 0'))
+    ) {
+      return
+    }
+    
+    originalConsoleWarn.apply(console, args)
+  }
+})
 
 // Cleanup after each test
 afterEach(() => {
