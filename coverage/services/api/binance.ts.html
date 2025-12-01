@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for components/ui/Modal.tsx</title>
+    <title>Code coverage report for services/api/binance.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">components/ui</a> Modal.tsx</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">services/api</a> binance.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.83% </span>
+                <span class="strong">4.83% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>23/24</span>
+                <span class='fraction'>3/62</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.29% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>36/37</span>
+                <span class='fraction'>0/32</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">7.69% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>1/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.83% </span>
+                <span class="strong">5.17% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>23/24</span>
+                <span class='fraction'>3/58</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -275,7 +275,72 @@
 <a name='L210'></a><a href='#L210'>210</a>
 <a name='L211'></a><a href='#L211'>211</a>
 <a name='L212'></a><a href='#L212'>212</a>
-<a name='L213'></a><a href='#L213'>213</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -301,7 +366,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -321,14 +385,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -336,43 +412,43 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">26x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">26x</span>
-<span class="cline-any cline-yes">26x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">26x</span>
-<span class="cline-any cline-yes">26x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">26x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
-<span class="cline-any cline-yes">41x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">41x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -390,13 +466,24 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -411,6 +498,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -421,13 +509,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -441,29 +536,50 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -475,230 +591,309 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// ============================================
-// TradingHub Pro - Modal Component
-// Animated modal with backdrop
+// TradingHub Pro - Binance API Client
+// Real-time cryptocurrency data from Binance
 // ============================================
 &nbsp;
-import { useEffect, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useId } from '@/lib/accessibility'
+import { API_CONFIG, CRYPTO_MAPPINGS, type CryptoSymbol } from './config'
+import type { OHLCV, Ticker, OrderBook, OrderBookEntry, Trade } from '@/types'
 &nbsp;
-interface ModalProps {
-  isOpen: boolean
-  onClose: () =&gt; void
-  title?: string
-  description?: string
-  children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
-  showCloseButton?: boolean
-  closeOnOverlayClick?: boolean
-  closeOnEscape?: boolean
-  className?: string
-  /** ID of the element that triggered the modal, for focus restoration */
-  triggerId?: string
+interface BinanceTickerResponse {
+  symbol: string
+  priceChange: string
+  priceChangePercent: string
+  weightedAvgPrice: string
+  prevClosePrice: string
+  lastPrice: string
+  lastQty: string
+  bidPrice: string
+  bidQty: string
+  askPrice: string
+  askQty: string
+  openPrice: string
+  highPrice: string
+  lowPrice: string
+  volume: string
+  quoteVolume: string
+  openTime: number
+  closeTime: number
+  firstId: number
+  lastId: number
+  count: number
 }
 &nbsp;
-const sizeClasses = {
-  sm: 'max-w-md',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
-  full: 'max-w-full mx-4',
+interface BinanceKlineResponse {
+  0: number   // Open time
+  1: string   // Open
+  2: string   // High
+  3: string   // Low
+  4: string   // Close
+  5: string   // Volume
+  6: number   // Close time
+  7: string   // Quote asset volume
+  8: number   // Number of trades
+  9: string   // Taker buy base asset volume
+  10: string  // Taker buy quote asset volume
+  11: string  // Ignore
 }
 &nbsp;
-export function Modal({
-  isOpen,
-  onClose,
-  title,
-  description,
-  children,
-  size = 'md',
-  showCloseButton = true,
-  closeOnOverlayClick = true,
-  closeOnEscape = true,
-  className,
-}: ModalProps) {
-  const titleId = useId('modal-title')
-  const descriptionId = useId('modal-desc')
-  const previousFocusRef = useRef&lt;HTMLElement | null&gt;(null)
-  const modalRef = useRef&lt;HTMLDivElement&gt;(null)
-&nbsp;
-  const handleEscape = useCallback(
-    (event: KeyboardEvent) =&gt; {
-      if (event.key === 'Escape' &amp;&amp; closeOnEscape) {
-        onClose()
-      }
-    },
-    [onClose, closeOnEscape]
-  )
-&nbsp;
-  // Handle focus trap and restoration
-  useEffect(() =&gt; {
-    if (isOpen) {
-      // Store previous focus
-      previousFocusRef.current = document.activeElement as HTMLElement
-      
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
-      
-      // Focus first focusable element in modal
-      setTimeout(() =&gt; {
-        const focusable = modalRef.current?.querySelector&lt;HTMLElement&gt;(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        focusable?.focus()
-      }, 0)
-    }
-&nbsp;
-    return () =&gt; {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
-      
-      // Restore focus on close
-      <span class="missing-if-branch" title="if path not taken" >I</span>if (!isOpen &amp;&amp; previousFocusRef.current) {
-<span class="cstat-no" title="statement not covered" >        previousFocusRef.current.focus()</span>
-      }
-    }
-  }, [isOpen, handleEscape])
-&nbsp;
-  return (
-    &lt;AnimatePresence&gt;
-      {isOpen &amp;&amp; (
-        &lt;div 
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={title ? titleId : undefined}
-          aria-describedby={description ? descriptionId : undefined}
-        &gt;
-          {/* Backdrop */}
-          &lt;motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={closeOnOverlayClick ? onClose : undefined}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            aria-hidden="true"
-          /&gt;
-&nbsp;
-          {/* Modal */}
-          &lt;motion.div
-            ref={modalRef}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className={cn(
-              'relative w-full rounded-2xl',
-              'bg-gray-900 border border-gray-800',
-              'shadow-2xl shadow-black/50',
-              sizeClasses[size],
-              className
-            )}
-          &gt;
-            {/* Header */}
-            {(title || showCloseButton) &amp;&amp; (
-              &lt;div className="flex items-center justify-between p-6 border-b border-gray-800"&gt;
-                &lt;div&gt;
-                  {title &amp;&amp; (
-                    &lt;h2 id={titleId} className="text-xl font-semibold text-white"&gt;{title}&lt;/h2&gt;
-                  )}
-                  {description &amp;&amp; (
-                    &lt;p id={descriptionId} className="mt-1 text-sm text-gray-400"&gt;{description}&lt;/p&gt;
-                  )}
-                &lt;/div&gt;
-                {showCloseButton &amp;&amp; (
-                  &lt;button
-                    onClick={onClose}
-                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    aria-label="Close modal"
-                  &gt;
-                    &lt;X className="h-5 w-5" aria-hidden="true" /&gt;
-                  &lt;/button&gt;
-                )}
-              &lt;/div&gt;
-            )}
-&nbsp;
-            {/* Content */}
-            &lt;div className="p-6"&gt;{children}&lt;/div&gt;
-          &lt;/motion.div&gt;
-        &lt;/div&gt;
-      )}
-    &lt;/AnimatePresence&gt;
-  )
+interface BinanceDepthResponse {
+  lastUpdateId: number
+  bids: [string, string][]  // [price, quantity]
+  asks: [string, string][]  // [price, quantity]
 }
 &nbsp;
-// Confirm Modal
-interface ConfirmModalProps {
-  isOpen: boolean
-  onClose: () =&gt; void
-  onConfirm: () =&gt; void
-  title: string
-  message: string
-  confirmText?: string
-  cancelText?: string
-  variant?: 'danger' | 'warning' | 'info'
-  isLoading?: boolean
+interface BinanceTradeResponse {
+  id: number
+  price: string
+  qty: string
+  quoteQty: string
+  time: number
+  isBuyerMaker: boolean
+  isBestMatch: boolean
 }
 &nbsp;
-export function ConfirmModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  title,
-  message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  variant = 'danger',
-  isLoading = false,
-}: ConfirmModalProps) {
-  const variantClasses = {
-    danger: 'bg-red-600 hover:bg-red-700',
-    warning: 'bg-yellow-600 hover:bg-yellow-700',
-    info: 'bg-indigo-600 hover:bg-indigo-700',
+type TimeframeMap = Record&lt;string, string&gt;
+&nbsp;
+const TIMEFRAME_MAP: TimeframeMap = {
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '1h': '1h',
+  '4h': '4h',
+  '1d': '1d',
+  '1w': '1w',
+  '1M': '1M',
+}
+&nbsp;
+/**
+ * Binance API client for cryptocurrency data
+ */
+export class BinanceClient {
+  private baseUrl: string
+&nbsp;
+  constructor() {
+    this.baseUrl = API_CONFIG.BINANCE.BASE_URL
   }
 &nbsp;
-  return (
-    &lt;Modal isOpen={isOpen} onClose={onClose} title={title} size="sm"&gt;
-      &lt;p className="text-gray-300 mb-6"&gt;{message}&lt;/p&gt;
-      &lt;div className="flex justify-end gap-3"&gt;
-        &lt;button
-          onClick={onClose}
-          disabled={isLoading}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 transition-colors disabled:opacity-50"
-        &gt;
-          {cancelText}
-        &lt;/button&gt;
-        &lt;button
-          onClick={onConfirm}
-          disabled={isLoading}
-          className={cn(
-            'px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50',
-            variantClasses[variant]
-          )}
-        &gt;
-          {isLoading ? 'Loading...' : confirmText}
-        &lt;/button&gt;
-      &lt;/div&gt;
-    &lt;/Modal&gt;
-  )
+  /**
+   * Get the Binance symbol for a crypto
+   */
+  private <span class="fstat-no" title="function not covered" >getSymbol(c</span>rypto: CryptoSymbol): string {
+<span class="cstat-no" title="statement not covered" >    return CRYPTO_MAPPINGS[crypto]?.binance || `${crypto}USDT`</span>
+  }
+&nbsp;
+  /**
+   * Fetch 24h ticker data for a symbol
+   */
+  async <span class="fstat-no" title="function not covered" >getTicker(c</span>rypto: CryptoSymbol): Promise&lt;Ticker&gt; {
+    const symbol = <span class="cstat-no" title="statement not covered" >this.getSymbol(crypto)</span>
+    const response = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${this.baseUrl}${API_CONFIG.BINANCE.ENDPOINTS.TICKER_24H}?symbol=${symbol}`
+    )
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`Failed to fetch ticker: ${response.statusText}`)</span>
+    }
+&nbsp;
+    const data: BinanceTickerResponse = <span class="cstat-no" title="statement not covered" >await response.json()</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return {</span>
+      symbol: crypto,
+      name: CRYPTO_MAPPINGS[crypto]?.name || crypto,
+      price: parseFloat(data.lastPrice),
+      change: parseFloat(data.priceChange),
+      changePercent: parseFloat(data.priceChangePercent),
+      volume: parseFloat(data.volume),
+      high24h: parseFloat(data.highPrice),
+      low24h: parseFloat(data.lowPrice),
+      marketCap: undefined,
+      lastUpdated: Date.now(),
+    }
+  }
+&nbsp;
+  /**
+   * Fetch multiple tickers at once
+   */
+  async <span class="fstat-no" title="function not covered" >getMultipleTickers(c</span>ryptos: CryptoSymbol[]): Promise&lt;Record&lt;string, Ticker&gt;&gt; {
+    const symbols = <span class="cstat-no" title="statement not covered" >cryptos.map(<span class="fstat-no" title="function not covered" >c =&gt; <span class="cstat-no" title="statement not covered" >t</span>his.getSymbol(c))</span></span>
+    const symbolsParam = <span class="cstat-no" title="statement not covered" >JSON.stringify(symbols)</span>
+    
+    const response = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${this.baseUrl}${API_CONFIG.BINANCE.ENDPOINTS.TICKER_24H}?symbols=${encodeURIComponent(symbolsParam)}`
+    )
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`Failed to fetch tickers: ${response.statusText}`)</span>
+    }
+&nbsp;
+    const data: BinanceTickerResponse[] = <span class="cstat-no" title="statement not covered" >await response.json()</span>
+    const tickers: Record&lt;string, Ticker&gt; = <span class="cstat-no" title="statement not covered" >{}</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    for (const item of data) {</span>
+      const crypto = <span class="cstat-no" title="statement not covered" >cryptos.find(<span class="fstat-no" title="function not covered" >c =&gt; <span class="cstat-no" title="statement not covered" >t</span>his.getSymbol(c) === item.symbol)</span></span>
+<span class="cstat-no" title="statement not covered" >      if (crypto) {</span>
+<span class="cstat-no" title="statement not covered" >        tickers[crypto] = {</span>
+          symbol: crypto,
+          name: CRYPTO_MAPPINGS[crypto]?.name || crypto,
+          price: parseFloat(item.lastPrice),
+          change: parseFloat(item.priceChange),
+          changePercent: parseFloat(item.priceChangePercent),
+          volume: parseFloat(item.volume),
+          high24h: parseFloat(item.highPrice),
+          low24h: parseFloat(item.lowPrice),
+          marketCap: undefined,
+          lastUpdated: Date.now(),
+        }
+      }
+    }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return tickers</span>
+  }
+&nbsp;
+  /**
+   * Fetch OHLCV (candlestick) data
+   */
+  async <span class="fstat-no" title="function not covered" >getOHLCV(</span>
+    crypto: CryptoSymbol,
+    timeframe: string = <span class="branch-0 cbranch-no" title="branch not covered" >'1h',</span>
+    limit: number = <span class="branch-0 cbranch-no" title="branch not covered" >100</span>
+  ): Promise&lt;OHLCV[]&gt; {
+    const symbol = <span class="cstat-no" title="statement not covered" >this.getSymbol(crypto)</span>
+    const interval = <span class="cstat-no" title="statement not covered" >TIMEFRAME_MAP[timeframe] || '1h'</span>
+    
+    const response = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${this.baseUrl}${API_CONFIG.BINANCE.ENDPOINTS.KLINES}?symbol=${symbol}&amp;interval=${interval}&amp;limit=${limit}`
+    )
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`Failed to fetch OHLCV: ${response.statusText}`)</span>
+    }
+&nbsp;
+    const data: BinanceKlineResponse[] = <span class="cstat-no" title="statement not covered" >await response.json()</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return data.map(<span class="fstat-no" title="function not covered" >(k</span>line) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+      timestamp: kline[0],
+      open: parseFloat(kline[1]),
+      high: parseFloat(kline[2]),
+      low: parseFloat(kline[3]),
+      close: parseFloat(kline[4]),
+      volume: parseFloat(kline[5]),
+    }))
+  }
+&nbsp;
+  /**
+   * Fetch order book depth
+   */
+  async <span class="fstat-no" title="function not covered" >getOrderBook(c</span>rypto: CryptoSymbol, limit: number = <span class="branch-0 cbranch-no" title="branch not covered" >20): Promise&lt;OrderBook&gt; {</span>
+    const symbol = <span class="cstat-no" title="statement not covered" >this.getSymbol(crypto)</span>
+    
+    const response = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${this.baseUrl}${API_CONFIG.BINANCE.ENDPOINTS.DEPTH}?symbol=${symbol}&amp;limit=${limit}`
+    )
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`Failed to fetch order book: ${response.statusText}`)</span>
+    }
+&nbsp;
+    const data: BinanceDepthResponse = <span class="cstat-no" title="statement not covered" >await response.json()</span>
+&nbsp;
+    let bidTotal = <span class="cstat-no" title="statement not covered" >0</span>
+    let askTotal = <span class="cstat-no" title="statement not covered" >0</span>
+&nbsp;
+    const bids: OrderBookEntry[] = <span class="cstat-no" title="statement not covered" >data.bids.map(<span class="fstat-no" title="function not covered" >([</span>price, quantity]) =&gt; {</span>
+      const priceNum = <span class="cstat-no" title="statement not covered" >parseFloat(price)</span>
+      const quantityNum = <span class="cstat-no" title="statement not covered" >parseFloat(quantity)</span>
+<span class="cstat-no" title="statement not covered" >      bidTotal += priceNum * quantityNum</span>
+<span class="cstat-no" title="statement not covered" >      return {</span>
+        price: priceNum,
+        quantity: quantityNum,
+        total: bidTotal,
+      }
+    })
+&nbsp;
+    const asks: OrderBookEntry[] = <span class="cstat-no" title="statement not covered" >data.asks.map(<span class="fstat-no" title="function not covered" >([</span>price, quantity]) =&gt; {</span>
+      const priceNum = <span class="cstat-no" title="statement not covered" >parseFloat(price)</span>
+      const quantityNum = <span class="cstat-no" title="statement not covered" >parseFloat(quantity)</span>
+<span class="cstat-no" title="statement not covered" >      askTotal += priceNum * quantityNum</span>
+<span class="cstat-no" title="statement not covered" >      return {</span>
+        price: priceNum,
+        quantity: quantityNum,
+        total: askTotal,
+      }
+    })
+&nbsp;
+    const bestBid = <span class="cstat-no" title="statement not covered" >bids[0]?.price || 0</span>
+    const bestAsk = <span class="cstat-no" title="statement not covered" >asks[0]?.price || 0</span>
+    const spread = <span class="cstat-no" title="statement not covered" >bestAsk - bestBid</span>
+    const <span class="cstat-no" title="statement not covered" >midPrice = (bestBid + bestAsk) / 2</span>
+    const spreadPercent = <span class="cstat-no" title="statement not covered" >midPrice &gt; 0 ? (spread / midPrice) * 100 : 0</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return {</span>
+      bids,
+      asks,
+      spread,
+      spreadPercent,
+    }
+  }
+&nbsp;
+  /**
+   * Fetch recent trades
+   */
+  async <span class="fstat-no" title="function not covered" >getTrades(c</span>rypto: CryptoSymbol, limit: number = <span class="branch-0 cbranch-no" title="branch not covered" >50): Promise&lt;Trade[]&gt; {</span>
+    const symbol = <span class="cstat-no" title="statement not covered" >this.getSymbol(crypto)</span>
+    
+    const response = <span class="cstat-no" title="statement not covered" >await fetch(</span>
+      `${this.baseUrl}${API_CONFIG.BINANCE.ENDPOINTS.TRADES}?symbol=${symbol}&amp;limit=${limit}`
+    )
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`Failed to fetch trades: ${response.statusText}`)</span>
+    }
+&nbsp;
+    const data: BinanceTradeResponse[] = <span class="cstat-no" title="statement not covered" >await response.json()</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return data.map(<span class="fstat-no" title="function not covered" >(t</span>rade) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+      id: trade.id.toString(),
+      symbol: crypto,
+      side: trade.isBuyerMaker ? 'sell' : 'buy',
+      price: parseFloat(trade.price),
+      quantity: parseFloat(trade.qty),
+      timestamp: trade.time,
+      maker: trade.isBuyerMaker,
+    }))
+  }
 }
+&nbsp;
+// Export singleton instance
+export const binanceClient = new BinanceClient()
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

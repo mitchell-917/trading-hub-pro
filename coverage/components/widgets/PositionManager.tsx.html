@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">79.54% </span>
+                <span class="strong">80.43% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>35/44</span>
+                <span class='fraction'>37/46</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.31% </span>
+                <span class="strong">77.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>29/38</span>
+                <span class='fraction'>31/40</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -462,7 +462,11 @@
 <a name='L397'></a><a href='#L397'>397</a>
 <a name='L398'></a><a href='#L398'>398</a>
 <a name='L399'></a><a href='#L399'>399</a>
-<a name='L400'></a><a href='#L400'>400</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L400'></a><a href='#L400'>400</a>
+<a name='L401'></a><a href='#L401'>401</a>
+<a name='L402'></a><a href='#L402'>402</a>
+<a name='L403'></a><a href='#L403'>403</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -500,6 +504,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
@@ -700,6 +705,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -885,7 +891,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Sparkline } from '@/components/charts/Sparkline'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatNumber, formatPercentage, cn } from '@/lib/utils'
+import { formatNumber, formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Position } from '@/types'
 &nbsp;
 interface PositionManagerProps {
@@ -899,6 +906,7 @@ export function PositionManager({
 }: PositionManagerProps) {
   const positions = useTradingStore((s) =&gt; s.positions)
   const closePosition = useTradingStore((s) =&gt; s.closePosition)
+  const { formatPrice } = useCurrency()
   
   const [expandedId, setExpandedId] = useState&lt;string | null&gt;(null)
   const [closingPosition, setClosingPosition] = useState&lt;Position | null&gt;(null)
@@ -919,7 +927,7 @@ export function PositionManager({
 &nbsp;
   const handleClosePosition = <span class="fstat-no" title="function not covered" >() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (closingPosition) {</span>
-<span class="cstat-no" title="statement not covered" >      closePosition(closingPosition.id)</span>
+<span class="cstat-no" title="statement not covered" >      closePosition(closingPosition.id, closingPosition.currentPrice)</span>
 <span class="cstat-no" title="statement not covered" >      setClosingPosition(null)</span>
     }
   }
@@ -958,7 +966,7 @@ export function PositionManager({
               'text-lg font-semibold number-mono',
               totalPnL &gt;= 0 ? 'text-green-400' : <span class="branch-1 cbranch-no" title="branch not covered" >'text-red-400'</span>
             )}&gt;
-              {totalPnL &gt;= 0 ? '+' : <span class="branch-1 cbranch-no" title="branch not covered" >''}{f</span>ormatCurrency(totalPnL)}
+              {totalPnL &gt;= 0 ? '+' : <span class="branch-1 cbranch-no" title="branch not covered" >''}{f</span>ormatPrice(totalPnL)}
             &lt;/p&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -1003,7 +1011,7 @@ export function PositionManager({
           &lt;div className="flex justify-between text-sm"&gt;
             &lt;span className="text-gray-400"&gt;Total Position Value&lt;/span&gt;
             &lt;span className="font-medium number-mono"&gt;
-              {formatCurrency(totalValue)}
+              {formatPrice(totalValue)}
             &lt;/span&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -1036,11 +1044,11 @@ export function PositionManager({
               &lt;div className="grid grid-cols-2 gap-4 text-sm"&gt;
                 &lt;div&gt;
                   &lt;p className="text-gray-400"&gt;Entry Price&lt;/p&gt;
-                  &lt;p className="number-mono"&gt;{formatCurrency(closingPosition.entryPrice)}&lt;/p&gt;
+                  &lt;p className="number-mono"&gt;{formatPrice(closingPosition.entryPrice)}&lt;/p&gt;
                 &lt;/div&gt;
                 &lt;div&gt;
                   &lt;p className="text-gray-400"&gt;Current Price&lt;/p&gt;
-                  &lt;p className="number-mono"&gt;{formatCurrency(closingPosition.currentPrice)}&lt;/p&gt;
+                  &lt;p className="number-mono"&gt;{formatPrice(closingPosition.currentPrice)}&lt;/p&gt;
                 &lt;/div&gt;
                 &lt;div&gt;
                   &lt;p className="text-gray-400"&gt;Unrealized P&amp;L&lt;/p&gt;
@@ -1049,7 +1057,7 @@ export function PositionManager({
                     closingPosition.unrealizedPnL &gt;= 0 ? 'text-green-400' : 'text-red-400'
                   )}&gt;
                     {closingPosition.unrealizedPnL &gt;= 0 ? '+' : ''}
-                    {formatCurrency(closingPosition.unrealizedPnL)}
+                    {formatPrice(closingPosition.unrealizedPnL)}
                   &lt;/p&gt;
                 &lt;/div&gt;
                 &lt;div&gt;
@@ -1099,6 +1107,7 @@ interface PositionRowProps {
 }
 &nbsp;
 function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowProps) {
+  const { formatPrice } = useCurrency()
   const isProfit = position.unrealizedPnL &gt;= 0
   const isLong = position.side === 'long'
 &nbsp;
@@ -1151,7 +1160,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               &lt;/Badge&gt;
             &lt;/p&gt;
             &lt;p className="text-xs text-gray-400"&gt;
-              {formatNumber(position.quantity, 4)} @ {formatCurrency(position.entryPrice)}
+              {formatNumber(position.quantity, 4)} @ {formatPrice(position.entryPrice)}
             &lt;/p&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -1166,7 +1175,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               'font-medium number-mono',
               isProfit ? 'text-green-400' : <span class="branch-1 cbranch-no" title="branch not covered" >'text-red-400'</span>
             )}&gt;
-              {isProfit ? '+' : <span class="branch-1 cbranch-no" title="branch not covered" >''}{f</span>ormatCurrency(position.unrealizedPnL)}
+              {isProfit ? '+' : <span class="branch-1 cbranch-no" title="branch not covered" >''}{f</span>ormatPrice(position.unrealizedPnL)}
             &lt;/p&gt;
             &lt;p className={cn(
               'text-xs number-mono',
@@ -1196,12 +1205,12 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               &lt;div className="grid grid-cols-3 gap-4 text-sm mb-3"&gt;
                 &lt;div&gt;
                   &lt;p className="text-gray-400 text-xs"&gt;Current Price&lt;/p&gt;
-                  &lt;p className="number-mono"&gt;{formatCurrency(position.currentPrice)}&lt;/p&gt;
+                  &lt;p className="number-mono"&gt;{formatPrice(position.currentPrice)}&lt;/p&gt;
                 &lt;/div&gt;
                 &lt;div&gt;
                   &lt;p className="text-gray-400 text-xs"&gt;Position Value&lt;/p&gt;
                   &lt;p className="number-mono"&gt;
-                    {formatCurrency(position.quantity * position.currentPrice)}
+                    {formatPrice(position.quantity * position.currentPrice)}
                   &lt;/p&gt;
                 &lt;/div&gt;
                 &lt;div&gt;
@@ -1213,18 +1222,18 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
               {/* Stop Loss / Take Profit indicators */}
               &lt;div className="flex items-center gap-2 mb-3"&gt;
                 {position.stopLoss &amp;&amp; (
-<span class="branch-1 cbranch-no" title="branch not covered" >                  &lt;Tooltip content={`Stop Loss: ${formatCurrency(position.stopLoss)}`}&gt;</span>
+<span class="branch-1 cbranch-no" title="branch not covered" >                  &lt;Tooltip content={`Stop Loss: ${formatPrice(position.stopLoss)}`}&gt;</span>
                     &lt;div className="flex items-center gap-1 text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded"&gt;
                       &lt;ShieldAlert className="w-3 h-3" /&gt;
-                      SL: {formatCurrency(position.stopLoss)}
+                      SL: {formatPrice(position.stopLoss)}
                     &lt;/div&gt;
                   &lt;/Tooltip&gt;
                 )}
                 {position.takeProfit &amp;&amp; (
-<span class="branch-1 cbranch-no" title="branch not covered" >                  &lt;Tooltip content={`Take Profit: ${formatCurrency(position.takeProfit)}`}&gt;</span>
+<span class="branch-1 cbranch-no" title="branch not covered" >                  &lt;Tooltip content={`Take Profit: ${formatPrice(position.takeProfit)}`}&gt;</span>
                     &lt;div className="flex items-center gap-1 text-xs bg-green-500/10 text-green-400 px-2 py-1 rounded"&gt;
                       &lt;Target className="w-3 h-3" /&gt;
-                      TP: {formatCurrency(position.takeProfit)}
+                      TP: {formatPrice(position.takeProfit)}
                     &lt;/div&gt;
                   &lt;/Tooltip&gt;
                 )}
@@ -1267,7 +1276,7 @@ function PositionRow({ position, isExpanded, onToggle, onClose }: PositionRowPro
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T04:02:45.425Z
+                at 2025-12-01T06:58:14.860Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

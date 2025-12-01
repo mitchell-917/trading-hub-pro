@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">82.22% </span>
+                <span class="strong">82.6% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>37/45</span>
+                <span class='fraction'>38/46</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.08% </span>
+                <span class="strong">81.57% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>30/37</span>
+                <span class='fraction'>31/38</span>
             </div>
         
             
@@ -322,7 +322,13 @@
 <a name='L257'></a><a href='#L257'>257</a>
 <a name='L258'></a><a href='#L258'>258</a>
 <a name='L259'></a><a href='#L259'>259</a>
-<a name='L260'></a><a href='#L260'>260</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -392,6 +398,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -597,7 +605,8 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { OrderBookLevel } from '@/types'
-import { cn, formatCurrency, formatNumber } from '@/lib/utils'
+import { cn, formatNumber } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 &nbsp;
 interface DepthChartProps {
   bids: OrderBookLevel[]
@@ -619,9 +628,10 @@ interface DepthDataPoint {
 interface DepthTooltipProps {
   active?: boolean
   payload?: Array&lt;{ payload: DepthDataPoint }&gt;
+  formatPrice: (value: number, decimals?: number) =&gt; string
 }
 &nbsp;
-function <span class="fstat-no" title="function not covered" >DepthChartTooltip({</span> active, payload }: DepthTooltipProps) {
+function <span class="fstat-no" title="function not covered" >DepthChartTooltip({</span> active, payload, formatPrice }: DepthTooltipProps) {
 <span class="cstat-no" title="statement not covered" >  if (!active || !payload || !payload.length) <span class="cstat-no" title="statement not covered" >return null</span></span>
 &nbsp;
   const point = <span class="cstat-no" title="statement not covered" >payload[0].payload</span>
@@ -630,7 +640,7 @@ function <span class="fstat-no" title="function not covered" >DepthChartTooltip(
 <span class="cstat-no" title="statement not covered" >  return (</span>
     &lt;div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm"&gt;
       &lt;div className="text-xs text-gray-400 mb-1"&gt;
-        Price: {formatCurrency(point.price)}
+        Price: {formatPrice(point.price)}
       &lt;/div&gt;
       {isBid ? (
         &lt;div className="text-green-400 text-sm font-medium"&gt;
@@ -652,6 +662,8 @@ export function DepthChart({
   midPrice,
   className,
 }: DepthChartProps) {
+  const { formatPrice } = useCurrency()
+&nbsp;
   const chartData = useMemo(() =&gt; {
     // Sort bids (descending) and asks (ascending)
     const sortedBids = [...bids].sort((a, b) =&gt; b.price - a.price)
@@ -723,9 +735,9 @@ export function DepthChart({
   }, [bids, asks])
 &nbsp;
   // Memoized tooltip renderer
-  const renderTooltip = useCallback(<span class="fstat-no" title="function not covered" >(p</span>rops: DepthTooltipProps) =&gt; {
-<span class="cstat-no" title="statement not covered" >    return &lt;DepthChartTooltip {...props} /&gt;</span>
-  }, [])
+  const renderTooltip = useCallback(<span class="fstat-no" title="function not covered" >(p</span>rops: Omit&lt;DepthTooltipProps, 'formatPrice'&gt;) =&gt; {
+<span class="cstat-no" title="statement not covered" >    return &lt;DepthChartTooltip {...props} formatPrice={formatPrice} /&gt;</span>
+  }, [formatPrice])
 &nbsp;
   if (chartData.length === 0) {
     return (
@@ -788,7 +800,7 @@ export function DepthChart({
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6b7280', fontSize: 10 }}
-            tickFormatter={<span class="fstat-no" title="function not covered" >(<span class="cstat-no" title="statement not covered" >v</span>alue) =&gt; formatCurrency(value, 0)}</span>
+            tickFormatter={<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >formatPrice(value, 0)}</span>
             interval="preserveStartEnd"
           /&gt;
 &nbsp;
@@ -847,7 +859,7 @@ export function DepthChart({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T04:02:45.425Z
+                at 2025-12-01T06:58:14.860Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

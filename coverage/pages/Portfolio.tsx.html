@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86.95% </span>
+                <span class="strong">87.32% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>60/69</span>
+                <span class='fraction'>62/71</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.24% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>52/61</span>
+                <span class='fraction'>54/63</span>
             </div>
         
             
@@ -626,7 +626,18 @@
 <a name='L561'></a><a href='#L561'>561</a>
 <a name='L562'></a><a href='#L562'>562</a>
 <a name='L563'></a><a href='#L563'>563</a>
-<a name='L564'></a><a href='#L564'>564</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L564'></a><a href='#L564'>564</a>
+<a name='L565'></a><a href='#L565'>565</a>
+<a name='L566'></a><a href='#L566'>566</a>
+<a name='L567'></a><a href='#L567'>567</a>
+<a name='L568'></a><a href='#L568'>568</a>
+<a name='L569'></a><a href='#L569'>569</a>
+<a name='L570'></a><a href='#L570'>570</a>
+<a name='L571'></a><a href='#L571'>571</a>
+<a name='L572'></a><a href='#L572'>572</a>
+<a name='L573'></a><a href='#L573'>573</a>
+<a name='L574'></a><a href='#L574'>574</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -771,6 +782,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">60x</span>
 <span class="cline-any cline-yes">60x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -808,6 +823,7 @@
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">15x</span>
@@ -857,6 +873,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1235,7 +1255,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useTradingStore } from '@/lib/store'
-import { formatCurrency, formatPercentage, cn } from '@/lib/utils'
+import { formatPercentage, cn } from '@/lib/utils'
+import { useCurrency } from '@/context/CurrencyContext'
 import type { Position } from '@/types'
 &nbsp;
 // Helper to compute portfolio values
@@ -1324,6 +1345,7 @@ interface MetricCardProps {
   icon: typeof TrendingUp
   trend?: 'up' | 'down' | 'neutral'
   subtitle?: string
+  formatPrice: (value: number, decimals?: number) =&gt; string
 }
 &nbsp;
 function MetricCard({ 
@@ -1333,7 +1355,10 @@ function MetricCard({
   icon: Icon, 
   trend,
   subtitle,
+  formatPrice: _formatPrice,
 }: MetricCardProps) {
+  // _formatPrice available for custom formatting if needed
+  void _formatPrice
   return (
     &lt;Card className="p-4"&gt;
       &lt;div className="flex items-start justify-between"&gt;
@@ -1371,6 +1396,7 @@ export function Portfolio() {
   const [timeRange, setTimeRange] = useState&lt;'1W' | '1M' | '3M' | '1Y' | 'ALL'&gt;('1M')
   const [selectedMetric, setSelectedMetric] = useState&lt;'value' | 'pnl'&gt;('value')
   const positions = useTradingStore((s) =&gt; s.positions)
+  const { formatPrice } = useCurrency()
   
   // Compute portfolio values with useMemo to avoid infinite loops
   const portfolio = useMemo(() =&gt; computePortfolio(positions), [positions])
@@ -1443,24 +1469,27 @@ export function Portfolio() {
         &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"&gt;
           &lt;MetricCard
             title="Total Portfolio Value"
-            value={formatCurrency(portfolio.totalValue)}
+            value={formatPrice(portfolio.totalValue)}
             change={portfolio.dailyPnLPercent}
             icon={Wallet}
             trend={portfolio.dailyPnL &gt;= 0 ? 'up' : <span class="branch-1 cbranch-no" title="branch not covered" >'down'}</span>
+            formatPrice={formatPrice}
           /&gt;
           &lt;MetricCard
             title="Unrealized P&amp;L"
-            value={formatCurrency(portfolio.unrealizedPnL)}
+            value={formatPrice(portfolio.unrealizedPnL)}
             change={(portfolio.unrealizedPnL / portfolio.totalValue) * 100}
             icon={portfolio.unrealizedPnL &gt;= 0 ? TrendingUp : <span class="branch-1 cbranch-no" title="branch not covered" >TrendingDown}</span>
             trend={portfolio.unrealizedPnL &gt;= 0 ? 'up' : <span class="branch-1 cbranch-no" title="branch not covered" >'down'}</span>
+            formatPrice={formatPrice}
           /&gt;
           &lt;MetricCard
             title="Buying Power"
-            value={formatCurrency(portfolio.buyingPower)}
+            value={formatPrice(portfolio.buyingPower)}
             icon={DollarSign}
             trend="neutral"
             subtitle="Available for trading"
+            formatPrice={formatPrice}
           /&gt;
           &lt;MetricCard
             title="Win Rate"
@@ -1468,6 +1497,7 @@ export function Portfolio() {
             icon={Target}
             trend={riskMetrics.winRate &gt;= 50 ? 'up' : <span class="branch-1 cbranch-no" title="branch not covered" >'down'}</span>
             subtitle={`${positions.length} active positions`}
+            formatPrice={formatPrice}
           /&gt;
         &lt;/div&gt;
 &nbsp;
@@ -1521,7 +1551,7 @@ export function Portfolio() {
                 &lt;Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
                   labelFormatter={<span class="fstat-no" title="function not covered" >(t</span>imestamp) =&gt; <span class="cstat-no" title="statement not covered" >new Date(timestamp).toLocaleDateString()}</span>
-                  formatter={<span class="fstat-no" title="function not covered" >(v</span>alue: number) =&gt; <span class="cstat-no" title="statement not covered" >[formatCurrency(value), selectedMetric === 'value' ? 'Value' : 'P&amp;L']}</span>
+                  formatter={<span class="fstat-no" title="function not covered" >(v</span>alue: number) =&gt; <span class="cstat-no" title="statement not covered" >[formatPrice(value), selectedMetric === 'value' ? 'Value' : 'P&amp;L']}</span>
                 /&gt;
                 &lt;Area 
                   type="monotone" 
@@ -1567,7 +1597,7 @@ export function Portfolio() {
                     &lt;/Pie&gt;
                     &lt;Tooltip 
                       contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
-                      formatter={<span class="fstat-no" title="function not covered" >(<span class="cstat-no" title="statement not covered" >v</span>alue: number) =&gt; formatCurrency(value)}</span>
+                      formatter={<span class="fstat-no" title="function not covered" >(v</span>alue: number) =&gt; <span class="cstat-no" title="statement not covered" >formatPrice(value)}</span>
                     /&gt;
                   &lt;/PieChart&gt;
                 &lt;/ResponsiveContainer&gt;
@@ -1584,7 +1614,7 @@ export function Portfolio() {
                     &lt;/div&gt;
                     &lt;div className="flex items-center gap-4"&gt;
                       &lt;span className="text-sm text-gray-400"&gt;
-                        {formatCurrency(item.value)}
+                        {formatPrice(item.value)}
                       &lt;/span&gt;
                       &lt;span className="text-sm font-medium w-16 text-right"&gt;
                         {item.percent.toFixed(1)}%
@@ -1660,7 +1690,7 @@ export function Portfolio() {
             &lt;/div&gt;
             &lt;div className="p-4 rounded-lg bg-gray-800/50"&gt;
               &lt;p className="text-xs text-gray-400 mb-1"&gt;VaR (95%)&lt;/p&gt;
-              &lt;p className="text-xl font-bold text-orange-400"&gt;{formatCurrency(riskMetrics.var95)}&lt;/p&gt;
+              &lt;p className="text-xl font-bold text-orange-400"&gt;{formatPrice(riskMetrics.var95)}&lt;/p&gt;
             &lt;/div&gt;
           &lt;/div&gt;
         &lt;/Card&gt;
@@ -1719,7 +1749,7 @@ export function Portfolio() {
               &lt;/div&gt;
               &lt;div&gt;
                 &lt;p className="text-sm text-gray-400"&gt;Avg. Win&lt;/p&gt;
-                &lt;p className="text-xl font-bold"&gt;{formatCurrency(riskMetrics.avgWin)}&lt;/p&gt;
+                &lt;p className="text-xl font-bold"&gt;{formatPrice(riskMetrics.avgWin)}&lt;/p&gt;
               &lt;/div&gt;
             &lt;/div&gt;
           &lt;/Card&gt;
@@ -1730,7 +1760,7 @@ export function Portfolio() {
               &lt;/div&gt;
               &lt;div&gt;
                 &lt;p className="text-sm text-gray-400"&gt;Avg. Loss&lt;/p&gt;
-                &lt;p className="text-xl font-bold"&gt;{formatCurrency(riskMetrics.avgLoss)}&lt;/p&gt;
+                &lt;p className="text-xl font-bold"&gt;{formatPrice(riskMetrics.avgLoss)}&lt;/p&gt;
               &lt;/div&gt;
             &lt;/div&gt;
           &lt;/Card&gt;
@@ -1759,7 +1789,7 @@ export default Portfolio
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-30T04:02:45.425Z
+                at 2025-12-01T06:58:14.860Z
             </div>
         <script src="../prettify.js"></script>
         <script>
