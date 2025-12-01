@@ -7,7 +7,7 @@ import { useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useId } from '@/lib/accessibility'
+import { useId } from '@/lib/a11y-utils'
 
 interface ModalProps {
   isOpen: boolean

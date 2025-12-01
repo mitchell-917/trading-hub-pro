@@ -42,4 +42,14 @@ export {
 export { createMockTicker, createMockPosition, createMockOrder } from './factories'
 
 // Export mock data provider hooks
-export { MockDataProvider, useMockData } from './providers'
+export { MockDataProvider, useMockData, type DataSourceFlags } from './providers'
+
+// Export utility functions
+export {
+  DEFAULT_FLAGS,
+  PRODUCTION_FLAGS,
+  isTestEnvironment,
+  isDevelopment,
+  isProduction,
+  getEnvironmentFlags,
+} from './utils'

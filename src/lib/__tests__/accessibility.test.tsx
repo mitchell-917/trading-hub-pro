@@ -7,6 +7,8 @@ import { renderHook, act, render, screen } from '@testing-library/react'
 import {
   VisuallyHidden,
   SkipLink,
+} from '../accessibility'
+import {
   useAnnounce,
   usePriceChangeAnnouncement,
   useFocusTrap,
@@ -18,7 +20,7 @@ import {
   colorBlindSafeColors,
   usePrefersReducedMotion,
   generateId,
-} from '../accessibility'
+} from '../a11y-utils'
 
 describe('Accessibility Utilities', () => {
   describe('VisuallyHidden', () => {

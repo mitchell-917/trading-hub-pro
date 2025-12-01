@@ -2,18 +2,20 @@
 // TradingHub Pro - Mock Providers Tests
 // ============================================
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import React from 'react'
 import {
   MockDataProvider,
   useMockData,
+} from '../providers'
+import {
   PRODUCTION_FLAGS,
   isTestEnvironment,
   isDevelopment,
   isProduction,
   getEnvironmentFlags,
-} from '../providers'
+} from '../utils'
 
 describe('MockDataProvider', () => {
   describe('useMockData hook', () => {
