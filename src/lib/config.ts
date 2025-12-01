@@ -62,8 +62,8 @@ export const QUERY_CONFIG = {
   /** Cache time in milliseconds */
   CACHE_TIME: 5 * 60 * 1000,
   
-  /** Retry attempts */
-  RETRY_ATTEMPTS: 3,
+  /** Retry attempts (set to 1 for faster error feedback) */
+  RETRY_ATTEMPTS: 1,
   
   /** Refetch interval for real-time data */
   REALTIME_REFETCH_INTERVAL: 5_000,
