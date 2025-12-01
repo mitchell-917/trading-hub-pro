@@ -16,16 +16,20 @@ import type {
   UserPreferences,
 } from '@/types'
 import { generateId } from './utils'
+import {
+  TRADING_CONFIG,
+  DEFAULT_WATCHLIST_SYMBOLS,
+  STORAGE_KEYS,
+  UI_CONFIG,
+  CHART_CONFIG,
+} from './config'
 
 // Default watchlist items (no mock prices - will be updated by real data)
-const DEFAULT_WATCHLIST: WatchlistItem[] = [
-  { symbol: 'BTC', name: 'Bitcoin', addedAt: Date.now() },
-  { symbol: 'ETH', name: 'Ethereum', addedAt: Date.now() },
-  { symbol: 'SOL', name: 'Solana', addedAt: Date.now() },
-]
-
-// Initial account balance
-const INITIAL_BALANCE = 100000
+const DEFAULT_WATCHLIST: WatchlistItem[] = DEFAULT_WATCHLIST_SYMBOLS.map((item) => ({
+  symbol: item.symbol,
+  name: item.name,
+  addedAt: Date.now(),
+}))
 
 // ============================================
 // Trading Store
@@ -85,7 +89,7 @@ export const useTradingStore = create<TradingState>()(
           positions: [], // Start with no positions
           orders: [], // Start with no orders
           watchlist: DEFAULT_WATCHLIST,
-          cashBalance: INITIAL_BALANCE, // Start with $100,000
+          cashBalance: TRADING_CONFIG.INITIAL_BALANCE,
           settings: {
             theme: 'dark',
             notifications: true,
@@ -247,7 +251,7 @@ export const useTradingStore = create<TradingState>()(
             set({
               positions: [],
               orders: [],
-              cashBalance: INITIAL_BALANCE,
+              cashBalance: TRADING_CONFIG.INITIAL_BALANCE,
             }, false, 'resetAccount')
           },
 
@@ -281,7 +285,7 @@ export const useTradingStore = create<TradingState>()(
           },
         }),
         {
-          name: 'trading-hub-storage',
+          name: STORAGE_KEYS.TRADING_STORE,
           partialize: (state) => ({
             positions: state.positions,
             orders: state.orders,
@@ -298,6 +302,9 @@ export const useTradingStore = create<TradingState>()(
 
 // ============================================
 // Portfolio Store
+// @deprecated Use useTradingStore instead - this store will be removed in v2.0
+// This store duplicates functionality from useTradingStore.
+// Migrate to useTradingStore.positions, useTradingStore.getPortfolioValue()
 // ============================================
 
 interface PortfolioState {
@@ -312,13 +319,20 @@ interface PortfolioState {
   calculateTotals: () => void
 }
 
+/**
+ * @deprecated Use useTradingStore instead. This store will be removed in v2.0.
+ * Migrate to:
+ * - useTradingStore.positions
+ * - useTradingStore.cashBalance
+ * - useTradingStore.getPortfolioValue()
+ */
 export const usePortfolioStore = create<PortfolioState>()(
   devtools(
     (set, get) => ({
       positions: [], // Start with no positions
-      totalValue: INITIAL_BALANCE,
+      totalValue: TRADING_CONFIG.INITIAL_BALANCE,
       totalPnl: 0,
-      cashBalance: INITIAL_BALANCE,
+      cashBalance: TRADING_CONFIG.INITIAL_BALANCE,
 
       setPositions: (positions: Position[]) => {
         set({ positions }, false, 'setPositions')
@@ -358,6 +372,9 @@ export const usePortfolioStore = create<PortfolioState>()(
 
 // ============================================
 // Orders Store
+// @deprecated Use useTradingStore instead - this store will be removed in v2.0
+// This store duplicates functionality from useTradingStore.
+// Migrate to useTradingStore.orders, useTradingStore.addOrder()
 // ============================================
 
 interface OrdersState {
@@ -371,6 +388,12 @@ interface OrdersState {
   getOrderHistory: () => Order[]
 }
 
+/**
+ * @deprecated Use useTradingStore instead. This store will be removed in v2.0.
+ * Migrate to:
+ * - useTradingStore.orders
+ * - useTradingStore.addOrder()
+ */
 export const useOrdersStore = create<OrdersState>()(
   devtools(
     (set, get) => ({
@@ -433,6 +456,9 @@ export const useOrdersStore = create<OrdersState>()(
 
 // ============================================
 // Watchlist Store
+// @deprecated Use useTradingStore instead - this store will be removed in v2.0
+// This store duplicates functionality from useTradingStore.
+// Migrate to useTradingStore.watchlist, useTradingStore.addToWatchlist()
 // ============================================
 
 interface WatchlistState {
@@ -445,6 +471,13 @@ interface WatchlistState {
   isWatching: (symbol: string) => boolean
 }
 
+/**
+ * @deprecated Use useTradingStore instead. This store will be removed in v2.0.
+ * Migrate to:
+ * - useTradingStore.watchlist
+ * - useTradingStore.addToWatchlist()
+ * - useTradingStore.removeFromWatchlist()
+ */
 export const useWatchlistStore = create<WatchlistState>()(
   devtools(
     (set, get) => ({
@@ -514,14 +547,14 @@ export const useChartStore = create<ChartState>()(
   devtools(
     (set) => ({
       config: {
-        type: 'candlestick',
-        timeFrame: '1h',
+        type: CHART_CONFIG.DEFAULT_TYPE,
+        timeFrame: CHART_CONFIG.DEFAULT_TIMEFRAME,
         indicators: {
           rsi: true,
           macd: false,
           bollingerBands: true,
-          sma: [20, 50],
-          ema: [12, 26],
+          sma: [...CHART_CONFIG.DEFAULT_SMA_PERIODS],
+          ema: [...CHART_CONFIG.DEFAULT_EMA_PERIODS],
           volume: true,
         },
         overlays: {
@@ -726,7 +759,7 @@ export const useUIStore = create<UIState>()(
           'addNotification'
         )
 
-        // Auto-remove after 5 seconds
+        // Auto-remove after configured duration
         setTimeout(() => {
           set(
             (state) => ({
@@ -735,7 +768,7 @@ export const useUIStore = create<UIState>()(
             false,
             'removeNotification'
           )
-        }, 5000)
+        }, UI_CONFIG.TOAST_DURATION)
       },
 
       removeNotification: (id: string) => {

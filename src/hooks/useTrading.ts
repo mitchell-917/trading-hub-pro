@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react'
 import type { Order, OrderType, OrderSide, TimeInForce } from '@/types'
 import { useOrdersStore, useTradingStore } from '@/lib/store'
 import { generateId } from '@/lib/utils'
+import { TRADING_CONFIG } from '@/lib/config'
 
 interface PlaceOrderParams {
   symbol: string
@@ -88,7 +89,7 @@ export function useTrading(): UseTradingReturn {
       }
 
       // Simulate API delay (real trading would call an exchange API)
-      await new Promise((resolve) => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, TRADING_CONFIG.ORDER_EXECUTION_DELAY))
 
       try {
         const order: Order = {
@@ -143,7 +144,7 @@ export function useTrading(): UseTradingReturn {
       setLastError(null)
 
       // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, TRADING_CONFIG.ORDER_CANCEL_DELAY))
 
       try {
         cancelStoreOrder(orderId)
@@ -176,7 +177,7 @@ export function useTrading(): UseTradingReturn {
       }
 
       // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, TRADING_CONFIG.ORDER_MODIFY_DELAY))
 
       try {
         updateOrder(orderId, {
@@ -220,8 +221,7 @@ export function calculateOrderValue(
   total: number
 } {
   const notional = quantity * price
-  const feeRate = 0.001 // 0.1% fee
-  const fee = notional * feeRate
+  const fee = notional * TRADING_CONFIG.FEE_RATE
   const total = side === 'buy' ? notional + fee : notional - fee
 
   return {
