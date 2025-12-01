@@ -2,7 +2,7 @@
 // TradingHub Pro - Currency Context Tests
 // ============================================
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { CurrencyProvider, useCurrency } from '../CurrencyContext'
@@ -42,7 +42,7 @@ import {
 describe('CurrencyContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getStoredCurrency).mockReturnValue(null)
+    vi.mocked(getStoredCurrency).mockReturnValue(undefined as unknown as string)
   })
 
   describe('CurrencyProvider', () => {

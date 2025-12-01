@@ -6,36 +6,28 @@
 import { z } from 'zod'
 
 /**
+ * Helper to parse boolean from string environment variables
+ */
+const booleanFromString = (defaultValue: boolean) =>
+  z
+    .string()
+    .optional()
+    .default(defaultValue ? 'true' : 'false')
+    .transform((val) => val === 'true')
+
+/**
  * Schema for client-side environment variables
  * All VITE_ prefixed variables are exposed to the client
  */
 const clientEnvSchema = z.object({
   // Application mode
-  VITE_USE_MOCK_DATA: z
-    .string()
-    .transform((val) => val !== 'false')
-    .default('true'),
-  
-  VITE_DEV_TOOLS: z
-    .string()
-    .transform((val) => val === 'true')
-    .default('false'),
-  
-  VITE_PERF_MONITORING: z
-    .string()
-    .transform((val) => val === 'true')
-    .default('false'),
+  VITE_USE_MOCK_DATA: booleanFromString(true),
+  VITE_DEV_TOOLS: booleanFromString(false),
+  VITE_PERF_MONITORING: booleanFromString(false),
   
   // Feature flags
-  VITE_AI_ENABLED: z
-    .string()
-    .transform((val) => val !== 'false')
-    .default('true'),
-  
-  VITE_REALTIME_ENABLED: z
-    .string()
-    .transform((val) => val !== 'false')
-    .default('true'),
+  VITE_AI_ENABLED: booleanFromString(true),
+  VITE_REALTIME_ENABLED: booleanFromString(true),
   
   // API configuration
   VITE_BINANCE_API_KEY: z.string().optional(),
@@ -43,33 +35,29 @@ const clientEnvSchema = z.object({
   VITE_BINANCE_WS_URL: z
     .string()
     .url()
+    .optional()
     .default('wss://stream.binance.com:9443/ws'),
   
   VITE_BINANCE_REST_URL: z
     .string()
     .url()
+    .optional()
     .default('https://api.binance.com/api/v3'),
   
   // Security
   VITE_ALLOWED_ORIGINS: z
     .string()
-    .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean))
-    .default('https://api.binance.com,wss://stream.binance.com'),
+    .optional()
+    .default('https://api.binance.com,wss://stream.binance.com')
+    .transform((val) => val.split(',').map((s) => s.trim()).filter(Boolean)),
   
   // Analytics
   VITE_SENTRY_DSN: z.string().optional(),
   VITE_ANALYTICS_ID: z.string().optional(),
   
   // Build
-  VITE_GENERATE_SOURCEMAP: z
-    .string()
-    .transform((val) => val === 'true')
-    .default('true'),
-  
-  VITE_BUNDLE_ANALYZE: z
-    .string()
-    .transform((val) => val === 'true')
-    .default('false'),
+  VITE_GENERATE_SOURCEMAP: booleanFromString(true),
+  VITE_BUNDLE_ANALYZE: booleanFromString(false),
 })
 
 /**

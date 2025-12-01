@@ -2,9 +2,8 @@
 // TradingHub Pro - Accessibility Utilities Tests
 // ============================================
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, render, screen } from '@testing-library/react'
-import React from 'react'
 import {
   VisuallyHidden,
   SkipLink,

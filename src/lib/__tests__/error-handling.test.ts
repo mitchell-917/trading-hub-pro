@@ -14,8 +14,6 @@ import {
   getErrorMessage,
   createWebSocketErrorHandler,
   setupGlobalErrorHandlers,
-  type AppError,
-  type ErrorSeverity,
 } from '../error-handling'
 
 // Mock the store
