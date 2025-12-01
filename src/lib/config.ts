@@ -131,6 +131,27 @@ export const STORAGE_KEYS = {
   PREFERENCES: 'trading-hub-preferences',
 } as const
 
+/**
+ * Feature flags for development/production mode
+ * Override via environment variables or MockDataProvider
+ */
+export const FEATURE_FLAGS = {
+  /** Use mock data generators instead of real API */
+  USE_MOCK_DATA: import.meta.env.VITE_USE_MOCK_DATA !== 'false',
+  
+  /** Enable developer tools and debugging */
+  DEV_TOOLS: import.meta.env.DEV,
+  
+  /** Enable performance monitoring */
+  PERF_MONITORING: import.meta.env.VITE_PERF_MONITORING === 'true',
+  
+  /** Enable AI features */
+  AI_ENABLED: import.meta.env.VITE_AI_ENABLED !== 'false',
+  
+  /** Enable WebSocket real-time updates */
+  REALTIME_ENABLED: import.meta.env.VITE_REALTIME_ENABLED !== 'false',
+} as const
+
 export type TradingConfig = typeof TRADING_CONFIG
 export type WebSocketConfig = typeof WEBSOCKET_CONFIG
 export type QueryConfig = typeof QUERY_CONFIG
@@ -138,3 +159,4 @@ export type UIConfig = typeof UI_CONFIG
 export type ChartConfigDefaults = typeof CHART_CONFIG
 export type APIConfig = typeof API_CONFIG
 export type StorageKeys = typeof STORAGE_KEYS
+export type FeatureFlags = typeof FEATURE_FLAGS
