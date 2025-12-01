@@ -1,33 +1,15 @@
 // ============================================
-// TradingHub Pro - Mock Data Providers
-// React context for toggling mock/real data
+// TradingHub Pro - Mock Data Provider Component
+// React context provider for toggling mock/real data
 // ============================================
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { DEFAULT_FLAGS, PRODUCTION_FLAGS, type DataSourceFlags } from './utils'
+import { MockDataContext, type MockDataContextValue } from './MockDataContext'
 
 // Re-export type for convenience
 export type { DataSourceFlags } from './utils'
-
-interface MockDataContextValue {
-  /** Current feature flags */
-  flags: DataSourceFlags
-  /** Check if a specific mock is enabled */
-  isMockEnabled: (key: keyof Omit<DataSourceFlags, 'simulateLatency' | 'latencyRange'>) => boolean
-  /** Update a specific flag */
-  setFlag: <K extends keyof DataSourceFlags>(key: K, value: DataSourceFlags[K]) => void
-  /** Enable all mocks */
-  enableAllMocks: () => void
-  /** Disable all mocks (use real data) */
-  disableAllMocks: () => void
-  /** Simulate network latency */
-  simulateDelay: () => Promise<void>
-  /** Reset to default flags */
-  resetFlags: () => void
-}
-
-const MockDataContext = createContext<MockDataContextValue | null>(null)
 
 interface MockDataProviderProps {
   children: ReactNode
@@ -102,48 +84,3 @@ export function MockDataProvider({
     </MockDataContext.Provider>
   )
 }
-
-/**
- * Hook to access mock data settings
- * 
- * @example
- * ```tsx
- * function MarketData() {
- *   const { isMockEnabled, simulateDelay } = useMockData()
- *   
- *   useEffect(() => {
- *     async function fetchData() {
- *       await simulateDelay()
- *       if (isMockEnabled('useMockMarketData')) {
- *         // Use mock generator
- *       } else {
- *         // Fetch from API
- *       }
- *     }
- *     fetchData()
- *   }, [])
- * }
- * ```
- */
-export function useMockData(): MockDataContextValue {
-  const context = useContext(MockDataContext)
-  
-  if (!context) {
-    // Return default implementation if not in provider
-    // This allows hooks to work outside provider for backward compatibility
-    return {
-      flags: DEFAULT_FLAGS,
-      isMockEnabled: () => true,
-      setFlag: () => {},
-      enableAllMocks: () => {},
-      disableAllMocks: () => {},
-      simulateDelay: () => Promise.resolve(),
-      resetFlags: () => {},
-    }
-  }
-  
-  return context
-}
-
-// NOTE: Utility functions (isTestEnvironment, isDevelopment, etc.) 
-// are in utils.ts - import from there directly

@@ -7,8 +7,8 @@ import { renderHook, act } from '@testing-library/react'
 import React from 'react'
 import {
   MockDataProvider,
-  useMockData,
 } from '../providers'
+import { useMockData } from '../useMockData'
 import {
   PRODUCTION_FLAGS,
   isTestEnvironment,
