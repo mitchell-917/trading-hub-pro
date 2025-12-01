@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { cn } from '@/lib/utils'
+import { SkipLink } from '@/lib/accessibility'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -32,6 +33,7 @@ export function Layout({ children, className }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      <SkipLink href="#main-content" />
       <Header onMenuToggle={handleMenuToggle} />
 
       <div className="flex">
@@ -40,6 +42,7 @@ export function Layout({ children, className }: LayoutProps) {
           <div
             className="fixed inset-0 bg-black/50 z-30 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
           />
         )}
 
@@ -52,6 +55,9 @@ export function Layout({ children, className }: LayoutProps) {
         />
 
         <main
+          id="main-content"
+          role="main"
+          aria-label="Main content"
           className={cn(
             'flex-1 min-h-[calc(100vh-64px)] transition-all duration-300',
             isSidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[240px]',

@@ -3,10 +3,11 @@
 // Animated modal with backdrop
 // ============================================
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useId } from '@/lib/accessibility'
 
 interface ModalProps {
   isOpen: boolean
@@ -19,6 +20,8 @@ interface ModalProps {
   closeOnOverlayClick?: boolean
   closeOnEscape?: boolean
   className?: string
+  /** ID of the element that triggered the modal, for focus restoration */
+  triggerId?: string
 }
 
 const sizeClasses = {
@@ -41,6 +44,11 @@ export function Modal({
   closeOnEscape = true,
   className,
 }: ModalProps) {
+  const titleId = useId('modal-title')
+  const descriptionId = useId('modal-desc')
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+
   const handleEscape = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'Escape' && closeOnEscape) {
@@ -50,22 +58,45 @@ export function Modal({
     [onClose, closeOnEscape]
   )
 
+  // Handle focus trap and restoration
   useEffect(() => {
     if (isOpen) {
+      // Store previous focus
+      previousFocusRef.current = document.activeElement as HTMLElement
+      
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
+      
+      // Focus first focusable element in modal
+      setTimeout(() => {
+        const focusable = modalRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        focusable?.focus()
+      }, 0)
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape)
       document.body.style.overflow = 'unset'
+      
+      // Restore focus on close
+      if (!isOpen && previousFocusRef.current) {
+        previousFocusRef.current.focus()
+      }
     }
   }, [isOpen, handleEscape])
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? titleId : undefined}
+          aria-describedby={description ? descriptionId : undefined}
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -74,10 +105,12 @@ export function Modal({
             transition={{ duration: 0.2 }}
             onClick={closeOnOverlayClick ? onClose : undefined}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-hidden="true"
           />
 
           {/* Modal */}
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -95,19 +128,19 @@ export function Modal({
               <div className="flex items-center justify-between p-6 border-b border-gray-800">
                 <div>
                   {title && (
-                    <h2 className="text-xl font-semibold text-white">{title}</h2>
+                    <h2 id={titleId} className="text-xl font-semibold text-white">{title}</h2>
                   )}
                   {description && (
-                    <p className="mt-1 text-sm text-gray-400">{description}</p>
+                    <p id={descriptionId} className="mt-1 text-sm text-gray-400">{description}</p>
                   )}
                 </div>
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     aria-label="Close modal"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-5 w-5" aria-hidden="true" />
                   </button>
                 )}
               </div>
